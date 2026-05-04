@@ -92,7 +92,7 @@ FoodCycle_AI/
 
 **1. Clone repository:**
 ```bash
-git clone https://github.com/USERNAME/foodcycle-ai.git
+git clone  https://github.com/askashahira/FoodCycle_AI-Kelompok5.git
 cd foodcycle-ai
 ```
 
