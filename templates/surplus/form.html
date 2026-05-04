@@ -1,0 +1,355 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block content %}
+
+<style>
+  .listing-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 2px dashed #c8d5c8; border-radius: var(--radius);
+    padding: 32px; text-align: center;
+    background: var(--cream); cursor: pointer;
+    transition: border-color .2s; margin-bottom: 12px;
+  }
+  .upload-zone:hover { border-color: var(--green-400); }
+  .upload-zone-icon { font-size: 2.2rem; margin-bottom: 8px; }
+  .upload-zone p { font-size: .88rem; color: var(--text-mid); margin: 0; }
+  .upload-zone small { font-size: .75rem; color: var(--text-light); margin-top: 4px; display: block; }
+
+  /* Toggle jual/donasi */
+  .type-toggle { display: flex; border-radius: 10px; overflow: hidden; border: 1.5px solid #e2e8f0; }
+  .type-toggle-opt {
+    flex: 1; padding: 10px; text-align: center;
+    font-size: .9rem; font-weight: 600; cursor: pointer;
+    background: #fff; transition: all .2s; border: none;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .type-toggle-opt.active-jual { background: #dbeafe; color: #1d4ed8; }
+  .type-toggle-opt.active-donasi { background: var(--green-100); color: var(--green-700); }
+
+  /* Radius slider */
+  .radius-slider { width: 100%; accent-color: var(--green-500); margin-top: 6px; }
+  .radius-ticks {
+    display: flex; justify-content: space-between;
+    font-size: .72rem; color: var(--text-light); margin-top: 4px;
+  }
+
+  /* Preview card */
+  .preview-card {
+    background: #fff; border-radius: var(--radius);
+    padding: 24px; box-shadow: var(--card-shadow);
+    position: sticky; top: 80px;
+  }
+  .preview-card-label {
+    font-size: .78rem; color: var(--text-light);
+    text-transform: uppercase; letter-spacing: .08em;
+    font-weight: 700; margin-bottom: 16px;
+  }
+  .preview-img {
+    height: 160px; background: linear-gradient(135deg, var(--green-100), #c8e6c9);
+    border-radius: 10px; display: flex; align-items: center;
+    justify-content: center; font-size: 3.5rem; margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .preview-img img { width: 100%; height: 100%; object-fit: cover; }
+  .preview-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; color: var(--text-dark); }
+  .preview-detail { font-size: .82rem; color: var(--text-mid); margin-bottom: 4px; }
+  .preview-price {
+    font-family: 'Fraunces', serif; font-size: 1.3rem;
+    font-weight: 800; color: var(--green-500); margin-top: 12px;
+  }
+  .preview-seller {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 16px; padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .preview-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--green-400); display: flex;
+    align-items: center; justify-content: center;
+    font-weight: 800; color: var(--green-900);
+    font-size: .85rem; font-family: 'Fraunces', serif;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 900px) {
+    .listing-layout { grid-template-columns: 1fr; }
+    .preview-card { position: relative; top: 0; }
+  }
+</style>
+
+<!-- Page header -->
+<div class="page-header-row" style="margin-bottom:24px;">
+    <div class="page-header" style="margin-bottom:0;">
+        <h2>📝 {{ title }}</h2>
+        <p>Upload surplus makananmu untuk dijual atau didonasikan ke masyarakat sekitar</p>
+    </div>
+</div>
+
+<div class="listing-layout">
+
+    <!-- ── Kolom Kiri: Form ── -->
+    <div>
+        <form method="post" enctype="multipart/form-data" id="listing-form">
+            {% csrf_token %}
+
+            <!-- Foto -->
+            <div class="form-card">
+                <h3 style="font-size:1rem; font-weight:700; margin-bottom:16px;">📸 Foto Makanan</h3>
+                <div class="upload-zone" id="upload-zone" onclick="document.getElementById('id_photo').click()">
+                    <div class="upload-zone-icon">📷</div>
+                    <p><strong>Klik untuk upload foto</strong></p>
+                    <small>JPG, PNG · Maks. 5MB</small>
+                </div>
+                <!-- field foto disembunyikan, trigger dari upload zone -->
+                <div style="display:none;">{{ form.photo }}</div>
+                {% if form.photo.errors %}
+                    <span style="color:var(--red-400); font-size:.78rem;">⚠ {{ form.photo.errors.0 }}</span>
+                {% endif %}
+                <!-- Thumbnail preview -->
+                <div id="photo-thumbs" style="display:flex; gap:8px; margin-top:8px;"></div>
+            </div>
+
+            <!-- Info Makanan -->
+            <div class="form-card">
+                <h3 style="font-size:1rem; font-weight:700; margin-bottom:20px;">📋 Informasi Makanan</h3>
+                <div class="form-grid">
+
+                    <!-- Judul -->
+                    <div class="form-group form-span-2">
+                        <label>{{ form.title.label }} *</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}<span style="color:var(--red-400);font-size:.78rem;">⚠ {{ form.title.errors.0 }}</span>{% endif %}
+                    </div>
+
+                    <!-- Deskripsi -->
+                    <div class="form-group form-span-2">
+                        <label>{{ form.description.label }} *</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}<span style="color:var(--red-400);font-size:.78rem;">⚠ {{ form.description.errors.0 }}</span>{% endif %}
+                    </div>
+
+                    <!-- Tipe toggle -->
+                    <div class="form-group">
+                        <label>Tipe Listing *</label>
+                        <div class="type-toggle">
+                            <button type="button" class="type-toggle-opt" id="btn-jual" onclick="setType('jual')">🏷 Jual</button>
+                            <button type="button" class="type-toggle-opt" id="btn-donasi" onclick="setType('donasi')">🎁 Donasi</button>
+                        </div>
+                        <!-- hidden select field Django -->
+                        <div style="display:none;">{{ form.type }}</div>
+                        {% if form.type.errors %}<span style="color:var(--red-400);font-size:.78rem;">⚠ {{ form.type.errors.0 }}</span>{% endif %}
+                    </div>
+
+                    <!-- Harga -->
+                    <div class="form-group" id="price-group">
+                        <label>{{ form.price.label }}</label>
+                        {{ form.price }}
+                        {% if form.price.errors %}<span style="color:var(--red-400);font-size:.78rem;">⚠ {{ form.price.errors.0 }}</span>{% endif %}
+                    </div>
+
+                    <!-- Batas waktu -->
+                    <div class="form-group form-span-2">
+                        <label>{{ form.expired_at.label }} *</label>
+                        {{ form.expired_at }}
+                        {% if form.expired_at.errors %}<span style="color:var(--red-400);font-size:.78rem;">⚠ {{ form.expired_at.errors.0 }}</span>{% endif %}
+                    </div>
+
+                    <!-- Radius slider -->
+                    <div class="form-group form-span-2">
+                        <label>
+                            Radius Distribusi:
+                            <strong id="radius-label" style="color:var(--green-500);">3 km</strong>
+                        </label>
+                        <input type="range" class="radius-slider" id="radius-slider"
+                               min="1" max="5" value="3"
+                               oninput="updateRadius(this.value)">
+                        <div class="radius-ticks">
+                            <span>1 km</span><span>2 km</span><span>3 km</span><span>4 km</span><span>5 km</span>
+                        </div>
+                        <!-- hidden field Django -->
+                        <div style="display:none;">{{ form.radius_km }}</div>
+                        {% if form.radius_km.errors %}<span style="color:var(--red-400);font-size:.78rem;">⚠ {{ form.radius_km.errors.0 }}</span>{% endif %}
+                    </div>
+
+                    <!-- Tombol -->
+                    <div class="form-span-2" style="display:flex; gap:12px; justify-content:flex-end; margin-top:8px;">
+                        <a href="{% url 'surplus_list' %}" class="btn-secondary">Batal</a>
+                        <button type="submit" class="btn-green">🚀 Publikasikan Listing</button>
+                    </div>
+
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- ── Kolom Kanan: Preview ── -->
+    <div>
+        <div class="preview-card">
+            <div class="preview-card-label">👁 Preview Listing</div>
+            <div class="preview-img" id="preview-img">🍱</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span class="type-badge type-jual" id="preview-type-badge">Dijual</span>
+                <span style="font-size:.78rem; color:var(--text-light);">
+                    📍 <span id="preview-radius">3</span> km radius
+                </span>
+            </div>
+            <div class="preview-title" id="preview-title">Judul listing akan muncul di sini</div>
+            <div class="preview-detail" id="preview-desc" style="line-height:1.6; margin-top:6px;"></div>
+            <div class="preview-detail" id="preview-expired"></div>
+            <div class="preview-price" id="preview-price">—</div>
+            <div class="preview-seller">
+                <div class="preview-avatar">{{ user.username|first|upper }}</div>
+                <div>
+                    <div style="font-size:.82rem; font-weight:600;">{{ user.username }}</div>
+                    <div style="font-size:.73rem; color:var(--text-light);">
+                        ⭐ {{ user.avg_rating|default:"—" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+var currentType = 'jual';
+
+// ── Sync type toggle dengan field Django ──────────────
+function setType(type) {
+    currentType = type;
+    var select = document.querySelector('select[name="type"]');
+    if (select) select.value = type;
+
+    var btnJual   = document.getElementById('btn-jual');
+    var btnDonasi = document.getElementById('btn-donasi');
+    var priceGroup = document.getElementById('price-group');
+    var priceInput = document.querySelector('input[name="price"]');
+    var badge = document.getElementById('preview-type-badge');
+    var priceEl = document.getElementById('preview-price');
+
+    // Tombol toggle style
+    btnJual.className   = 'type-toggle-opt' + (type === 'jual'   ? ' active-jual'   : '');
+    btnDonasi.className = 'type-toggle-opt' + (type === 'donasi' ? ' active-donasi' : '');
+
+    // Harga field
+    if (type === 'donasi') {
+        if (priceInput) { priceInput.value = ''; priceInput.disabled = true; priceInput.placeholder = 'Gratis (donasi)'; }
+        priceGroup.style.opacity = '.5';
+        priceEl.textContent = 'Gratis';
+        badge.className = 'type-badge type-donasi';
+        badge.textContent = 'Donasi';
+    } else {
+        if (priceInput) { priceInput.disabled = false; priceInput.placeholder = 'Masukkan harga (Rp)'; }
+        priceGroup.style.opacity = '1';
+        badge.className = 'type-badge type-jual';
+        badge.textContent = 'Dijual';
+        updatePrice();
+    }
+}
+
+// ── Init type dari nilai form (edit mode) ─────────────
+(function initType() {
+    var select = document.querySelector('select[name="type"]');
+    var initial = select ? select.value : 'jual';
+    setType(initial || 'jual');
+})();
+
+// ── Radius slider ──────────────────────────────────────
+function updateRadius(val) {
+    document.getElementById('radius-label').textContent = val + ' km';
+    document.getElementById('preview-radius').textContent = val;
+    // sync ke field Django
+    var field = document.querySelector('input[name="radius_km"], select[name="radius_km"]');
+    if (field) field.value = val;
+}
+// Init radius dari field Django
+(function initRadius() {
+    var field = document.querySelector('input[name="radius_km"], select[name="radius_km"]');
+    var val = field ? (field.value || 3) : 3;
+    document.getElementById('radius-slider').value = val;
+    updateRadius(val);
+})();
+
+// ── Preview: judul ─────────────────────────────────────
+var titleInput = document.querySelector('input[name="title"], textarea[name="title"]');
+if (titleInput) {
+    titleInput.addEventListener('input', function() {
+        var el = document.getElementById('preview-title');
+        el.textContent = this.value || 'Judul listing akan muncul di sini';
+    });
+}
+
+// ── Preview: deskripsi ─────────────────────────────────
+var descInput = document.querySelector('textarea[name="description"]');
+if (descInput) {
+    descInput.addEventListener('input', function() {
+        var text = this.value;
+        document.getElementById('preview-desc').textContent =
+            text.length > 100 ? text.substring(0, 100) + '…' : text;
+    });
+}
+
+// ── Preview: harga ─────────────────────────────────────
+function updatePrice() {
+    var priceInput = document.querySelector('input[name="price"]');
+    var el = document.getElementById('preview-price');
+    if (!priceInput || currentType === 'donasi') { el.textContent = 'Gratis'; return; }
+    var val = parseFloat(priceInput.value);
+    el.textContent = isNaN(val) ? '—' : 'Rp ' + val.toLocaleString('id-ID') + ' / porsi';
+}
+var priceInput = document.querySelector('input[name="price"]');
+if (priceInput) priceInput.addEventListener('input', updatePrice);
+
+// ── Preview: expired_at ────────────────────────────────
+var expiredInput = document.querySelector('input[name="expired_at"]');
+if (expiredInput) {
+    expiredInput.addEventListener('change', function() {
+        var el = document.getElementById('preview-expired');
+        if (!this.value) { el.textContent = ''; return; }
+        var d = new Date(this.value);
+        var opts = { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' };
+        el.textContent = '⏰ Berlaku hingga: ' + d.toLocaleDateString('id-ID', opts);
+    });
+}
+
+// ── Preview: foto ──────────────────────────────────────
+var photoInput = document.getElementById('id_photo');
+if (photoInput) {
+    photoInput.addEventListener('change', function() {
+        var file = this.files[0];
+        if (!file) return;
+
+        // Update upload zone label
+        document.getElementById('upload-zone').querySelector('p').innerHTML =
+            '<strong>' + file.name + '</strong>';
+
+        // Thumbnail
+        var thumbs = document.getElementById('photo-thumbs');
+        thumbs.innerHTML = '';
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            // Thumbnail di bawah zone
+            var thumb = document.createElement('div');
+            thumb.style.cssText = 'width:72px;height:72px;border-radius:10px;overflow:hidden;border:2px solid var(--green-400);';
+            thumb.innerHTML = '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;">';
+            thumbs.appendChild(thumb);
+
+            // Preview card image
+            var previewImg = document.getElementById('preview-img');
+            previewImg.innerHTML = '<img src="' + e.target.result + '">';
+        };
+        reader.readAsDataURL(file);
+    });
+}
+</script>
+
+{% endblock %}

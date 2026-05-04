@@ -1,0 +1,77 @@
+{% extends 'base_auth.html' %}
+{% block title %}Login - FoodCycle AI{% endblock %}
+{% block content %}
+<div style="min-height:calc(100vh - 64px); display:flex; align-items:center; justify-content:center; padding:2rem;">
+    <div style="background:var(--warm-white); border-radius:20px; padding:2.5rem; width:100%; max-width:420px; box-shadow:0 24px 64px rgba(0,0,0,0.25);">
+        <div style="text-align:center; margin-bottom:2rem;">
+            <div style="font-size:2.5rem; margin-bottom:.5rem;">🌱</div>
+            <h2 style="font-family:'Fraunces',serif; color:var(--green-900); font-size:1.7rem; margin-bottom:.3rem;">Selamat Datang!</h2>
+            <p style="color:var(--text-light); font-size:.9rem;">Login ke akun FoodCycle AI kamu</p>
+        </div>
+
+        {% if form.errors %}
+        <div style="background:#fde8e8; border:1px solid #fca5a5; border-radius:10px; padding:12px 16px; margin-bottom:1.5rem; display:flex; gap:10px; align-items:flex-start;">
+            <span style="font-size:1.1rem;">❌</span>
+            <div>
+                <p style="color:var(--red-400); font-size:.875rem; font-weight:600; margin-bottom:2px;">Login gagal!</p>
+                <p style="color:#b91c1c; font-size:.82rem;">Username atau password salah. Silakan coba lagi.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <form method="post" id="loginForm">
+            {% csrf_token %}
+            <div style="margin-bottom:1.2rem;">
+                <label style="font-size:.82rem; font-weight:600; color:var(--text-mid); display:block; margin-bottom:6px;">Username</label>
+                <input type="text" name="username" value="{{ form.username.value|default:'' }}"
+                    placeholder="Masukkan username kamu"
+                    style="width:100%; padding:11px 14px; border:1.5px solid {% if form.username.errors %}var(--red-400){% else %}#e2e8f0{% endif %}; border-radius:10px; font-size:.9rem; font-family:'Plus Jakarta Sans',sans-serif; outline:none; background:var(--cream);"
+                    onfocus="this.style.borderColor='var(--green-400)'"
+                    onblur="this.style.borderColor='{% if form.username.errors %}var(--red-400){% else %}#e2e8f0{% endif %}'">
+                {% if form.username.errors %}
+                <p style="color:var(--red-400); font-size:.78rem; margin-top:4px;">⚠ {{ form.username.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div style="margin-bottom:1.5rem;">
+                <label style="font-size:.82rem; font-weight:600; color:var(--text-mid); display:block; margin-bottom:6px;">Password</label>
+                <div style="position:relative;">
+                    <input type="password" name="password" id="passwordField"
+                        placeholder="Masukkan password kamu"
+                        style="width:100%; padding:11px 42px 11px 14px; border:1.5px solid {% if form.password.errors %}var(--red-400){% else %}#e2e8f0{% endif %}; border-radius:10px; font-size:.9rem; font-family:'Plus Jakarta Sans',sans-serif; outline:none; background:var(--cream);"
+                        onfocus="this.style.borderColor='var(--green-400)'"
+                        onblur="this.style.borderColor='{% if form.password.errors %}var(--red-400){% else %}#e2e8f0{% endif %}'">
+                    <button type="button" onclick="togglePassword()" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1rem; color:var(--text-light);" id="eyeBtn">👁</button>
+                </div>
+                {% if form.password.errors %}
+                <p style="color:var(--red-400); font-size:.78rem; margin-top:4px;">⚠ {{ form.password.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <button type="submit" style="width:100%; padding:.9rem; background:var(--green-400); color:var(--green-900); border:none; border-radius:10px; font-size:1rem; font-weight:700; font-family:'Fraunces',serif; cursor:pointer; transition:transform .15s, box-shadow .15s; box-shadow:0 8px 24px rgba(62,201,138,.3);"
+                onmouseover="this.style.transform='translateY(-1px)'"
+                onmouseout="this.style.transform='translateY(0)'">
+                Masuk Sekarang →
+            </button>
+        </form>
+
+        <p style="text-align:center; margin-top:1.5rem; font-size:.875rem; color:var(--text-light);">
+            Belum punya akun? <a href="{% url 'register' %}" style="color:var(--green-500); font-weight:600; text-decoration:none;">Daftar di sini</a>
+        </p>
+    </div>
+</div>
+
+<script>
+function togglePassword() {
+    var field = document.getElementById('passwordField');
+    var btn = document.getElementById('eyeBtn');
+    if (field.type === 'password') {
+        field.type = 'text';
+        btn.textContent = '🙈';
+    } else {
+        field.type = 'password';
+        btn.textContent = '👁';
+    }
+}
+</script>
+{% endblock %}

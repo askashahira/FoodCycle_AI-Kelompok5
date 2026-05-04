@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Listing Saya{% endblock %}
+{% block page_title %}Listing Saya{% endblock %}
+{% block content %}
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:28px;">
+    <div>
+        <h2 style="font-size:1.7rem; font-weight:800;">📋 Listing Saya</h2>
+        <p style="color:var(--text-mid); margin-top:4px; font-size:.9rem;">Kelola semua listing surplus yang kamu buat</p>
+    </div>
+    <a href="{% url 'surplus_create' %}" class="btn-green">+ Buat Listing</a>
+</div>
+
+{% if listings %}
+<div style="display:flex; flex-direction:column; gap:16px;">
+    {% for listing in listings %}
+    <div style="background:#fff; border-radius:var(--radius); padding:20px; box-shadow:var(--card-shadow); display:flex; align-items:center; gap:16px;">
+        <!-- Foto/Placeholder -->
+        <div style="width:72px; height:72px; border-radius:12px; overflow:hidden; flex-shrink:0;">
+            {% if listing.photo %}
+                <img src="{{ listing.photo.url }}" style="width:100%; height:100%; object-fit:cover;">
+            {% else %}
+                <div style="width:100%; height:100%; background:var(--green-100); display:flex; align-items:center; justify-content:center; font-size:1.8rem;">🍱</div>
+            {% endif %}
+        </div>
+
+        <!-- Info -->
+        <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                <span class="type-badge type-{{ listing.type }}">{{ listing.get_type_display }}</span>
+                <span class="badge {% if listing.status == 'aktif' %}badge-ok{% elif listing.status == 'terjual' %}badge-warning{% else %}badge-expired{% endif %}">
+                    {{ listing.get_status_display }}
+                </span>
+            </div>
+            <h3 style="font-size:1rem; font-weight:700; margin-bottom:4px;">{{ listing.title }}</h3>
+            <p style="font-size:.8rem; color:var(--text-light);">
+                {% if listing.type == 'jual' %}
+                    <span style="font-weight:700; color:var(--green-500);">Rp {{ listing.price|floatformat:0 }}</span> ·
+                {% endif %}
+                📍 {{ listing.radius_km }} km · {{ listing.created_at|date:"d M Y" }}
+            </p>
+        </div>
+
+        <!-- Aksi -->
+        <div style="display:flex; gap:8px; flex-shrink:0;">
+            <a href="{% url 'surplus_detail' listing.pk %}" class="btn-sm-primary">Detail</a>
+            <a href="{% url 'surplus_edit' listing.pk %}" class="btn-sm-primary">Edit</a>
+            <a href="{% url 'surplus_delete' listing.pk %}" class="btn-sm-danger">Batalkan</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p style="font-size:3rem; margin-bottom:1rem;">📝</p>
+    <p style="font-size:1.1rem; font-weight:600; margin-bottom:.5rem;">Belum ada listing</p>
+    <p style="color:var(--text-light); font-size:.9rem; margin-bottom:1.5rem;">Buat listing pertamamu sekarang!</p>
+    <a href="{% url 'surplus_create' %}" class="btn-green">+ Buat Listing</a>
+</div>
+{% endif %}
+{% endblock %}

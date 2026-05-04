@@ -1,0 +1,72 @@
+{% extends 'base_admin.html' %}
+{% block title %}Semua Pengguna - Admin{% endblock %}
+{% block page_title %}Manajemen Pengguna{% endblock %}
+{% block page_subtitle %}Kelola semua pengguna platform{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h3>👥 Semua Pengguna ({{ users|length }})</h3>
+        <a href="{% url 'admin_dashboard' %}">← Kembali ke Dashboard</a>
+    </div>
+
+    <div style="overflow-x:auto;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Listing</th>
+                    <th>Bergabung</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:32px; height:32px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; font-weight:800; color:#1d4ed8; font-size:.85rem; flex-shrink:0;">
+                                {{ u.username|first|upper }}
+                            </div>
+                            <div>
+                                <div style="font-weight:600;">{{ u.username }}</div>
+                                <div style="font-size:.75rem; color:#94a3b8;">{{ u.display_role }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="color:#64748b; font-size:.82rem;">{{ u.email }}</td>
+                    <td>
+                        {% if u.is_active %}
+                        <span><span class="status-dot dot-active"></span>Aktif</span>
+                        {% else %}
+                        <span><span class="status-dot dot-inactive"></span>Nonaktif</span>
+                        {% endif %}
+                    </td>
+                    <td style="color:#64748b;">{{ u.listings.count }}</td>
+                    <td style="color:#64748b; font-size:.82rem;">{{ u.date_joined|date:"d M Y" }}</td>
+                    <td>
+                        {% if not u.is_superuser %}
+                        <div style="display:flex; gap:5px;">
+                            <a href="{% url 'public_profile' u.username %}" class="btn-adm-view">Profil</a>
+                            <form method="post" action="{% url 'admin_user_ban' u.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                {% if u.is_active %}
+                                <button type="submit" class="btn-adm-ban" onclick="return confirm('Nonaktifkan?')">Nonaktifkan</button>
+                                {% else %}
+                                <button type="submit" class="btn-adm-unban">Aktifkan</button>
+                                {% endif %}
+                            </form>
+                        </div>
+                        {% else %}
+                        <span style="font-size:.75rem; color:#94a3b8;">Superuser</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Rekomendasi Resep AI{% endblock %}
+{% block page_title %}Resep AI{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h2>🤖 Rekomendasi Resep AI</h2>
+    <p>AI menganalisis stokmu dan menyarankan resep terbaik, memprioritaskan bahan yang hampir kedaluwarsa</p>
+</div>
+
+{% if error %}
+    <div class="alert" style="background:#fde8e8; color:var(--red-400); border-left-color:var(--red-400);">{{ error }}</div>
+{% endif %}
+
+<!-- AI Prompt Card -->
+<div class="ai-prompt-card">
+    <h3>✨ Analisis Stok Aktif</h3>
+    <p>Pilih bahan yang ingin digunakan. Bahan <span style="color:var(--amber-300); font-weight:600;">hampir kedaluwarsa</span> diprioritaskan secara otomatis.</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if near_expiry %}
+        <div style="margin-bottom:12px;">
+            <p style="font-size:.78rem; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px;">⚠️ Hampir Kedaluwarsa</p>
+            <div class="ingredient-tags">
+                {% for item in near_expiry %}
+                <label class="ing-tag near-expiry" style="cursor:pointer;">
+                    <input type="checkbox" name="selected_items" value="{{ item.pk }}" checked style="display:none;">
+                    <span class="dot"></span>
+                    {{ item.name }} ({{ item.quantity }} {{ item.unit }})
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if other_items %}
+        <div style="margin-bottom:20px;">
+            <p style="font-size:.78rem; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px;">🥦 Bahan Lainnya</p>
+            <div class="ingredient-tags">
+                {% for item in other_items %}
+                <label class="ing-tag" style="cursor:pointer;">
+                    <input type="checkbox" name="selected_items" value="{{ item.pk }}" style="display:none;">
+                    {{ item.name }} ({{ item.quantity }} {{ item.unit }})
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not near_expiry and not other_items %}
+        <p style="color:rgba(255,255,255,.6);">Belum ada bahan makanan. <a href="{% url 'food_add' %}" style="color:var(--green-400);">Tambah sekarang!</a></p>
+        {% else %}
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <button type="submit" class="btn-primary" style="font-size:.9rem; padding:11px 28px;">
+                🔄 Generate Rekomendasi Resep
+            </button>
+            <a href="{% url 'recipe_history' %}" style="color:rgba(255,255,255,.6); font-size:.88rem; text-decoration:none;">
+                📖 Riwayat Resep →
+            </a>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Results -->
+{% if recipes %}
+<div style="margin-bottom:20px;">
+    <h3 style="font-size:1.1rem; font-weight:700;">🍳 Hasil Rekomendasi</h3>
+</div>
+<div class="recipe-grid">
+    {% for recipe in recipes %}
+    {% with colors="linear-gradient(135deg,#dcfce7,#86efac);linear-gradient(135deg,#fef3c7,#fde68a);linear-gradient(135deg,#dbeafe,#93c5fd);linear-gradient(135deg,#fde8e8,#fca5a5)" %}
+    {% with emojis="🥘;🍲;🍛;🍗" %}
+    <div class="recipe-card">
+        <div class="recipe-img" style="background:linear-gradient(135deg,#dcfce7,#86efac);">
+            {% if forloop.counter == 1 %}🥘
+            {% elif forloop.counter == 2 %}🍲
+            {% elif forloop.counter == 3 %}🍛
+            {% else %}🍗{% endif %}
+        </div>
+        <div class="recipe-body">
+            <h4>{{ recipe.recipe_name }}</h4>
+            
+            <div class="recipe-meta-row">
+                <div class="recipe-meta">🍽 2 porsi</div>
+                <div class="recipe-meta">🔥 Mudah</div>
+            </div>
+
+            <div class="nutrition-row">
+                {% with nutrition=recipe.nutrition_estimate %}
+                {% for part in nutrition.split|slice:":4" %}
+                <span class="nutr-badge">{{ part }}</span>
+                {% endfor %}
+                {% endwith %}
+            </div>
+
+            <div class="ingredients-used">
+                <strong style="font-size:.75rem; color:var(--text-light); text-transform:uppercase; letter-spacing:.06em;">Bahan Digunakan:</strong><br>
+                {{ recipe.ingredients_used }}
+            </div>
+
+            <div style="font-size:.82rem; color:var(--text-mid); margin-bottom:16px; line-height:1.6;">
+                <strong style="font-size:.75rem; color:var(--text-light); text-transform:uppercase; letter-spacing:.06em;">Cara Memasak:</strong><br>
+                {{ recipe.instructions }}
+            </div>
+
+            <div class="recipe-footer">
+                <div style="font-family:'Fraunces',serif; font-weight:800; color:var(--green-500); font-size:1.1rem;">
+                    ~Rp {{ recipe.price_estimate|floatformat:0 }}
+                </div>
+                <a href="{% url 'recipe_detail' recipe.pk %}" class="btn-pilih">
+                    Pilih Resep →
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+    {% endwith %}
+    {% endfor %}
+</div>
+{% endif %}
+
+<script>
+// Toggle ingredient selection visual
+document.querySelectorAll('.ing-tag input').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+        var tag = this.closest('.ing-tag');
+        if (this.checked) {
+            tag.style.opacity = '1';
+            tag.style.borderColor = 'rgba(62,201,138,.6)';
+        } else {
+            tag.style.opacity = '.5';
+            tag.style.borderColor = 'rgba(255,255,255,.1)';
+        }
+    });
+});
+</script>
+{% endblock %}

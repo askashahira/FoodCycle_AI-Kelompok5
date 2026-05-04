@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Profil {{ profile_user.username }}{% endblock %}
+{% block page_title %}Profil Pengguna{% endblock %}
+{% block content %}
+
+<div style="background:linear-gradient(135deg, var(--green-900), var(--green-800)); border-radius:20px; padding:32px; color:#fff; display:flex; align-items:center; gap:24px; margin-bottom:24px;">
+    <div style="width:80px; height:80px; border-radius:50%; background:var(--green-400); display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:800; color:var(--green-900); font-family:'Fraunces',serif; border:4px solid rgba(255,255,255,.2); flex-shrink:0;">
+        {{ profile_user.username|first|upper }}
+    </div>
+    <div>
+        <h1 style="font-size:1.6rem; font-weight:800; margin-bottom:4px;">{{ profile_user.username }}</h1>
+        <p style="color:rgba(255,255,255,.5); font-size:.875rem;">📍 {{ profile_user.address|default:"Lokasi tidak diisi" }}</p>
+        <div style="display:flex; gap:20px; margin-top:12px;">
+            <div><span style="font-family:'Fraunces',serif; font-size:1.3rem; font-weight:800; color:var(--green-400);">{{ profile_user.avg_rating }}</span> <span style="font-size:.75rem; color:rgba(255,255,255,.5);">Rating</span></div>
+            <div><span style="font-family:'Fraunces',serif; font-size:1.3rem; font-weight:800; color:var(--green-400);">{{ profile_user.listings.count }}</span> <span style="font-size:.75rem; color:rgba(255,255,255,.5);">Listing</span></div>
+        </div>
+    </div>
+</div>
+
+<div class="two-col">
+    <div>
+        <div class="card">
+            <div class="card-header"><h3>🛒 Listing Aktif</h3></div>
+            {% if listings %}
+                {% for listing in listings %}
+                <div class="food-item-row">
+                    <div>
+                        <div class="food-name">
+                            <a href="{% url 'surplus_detail' listing.pk %}" style="color:var(--green-700); text-decoration:none;">{{ listing.title }}</a>
+                        </div>
+                        <div class="food-meta">
+                            {{ listing.get_type_display }} · 
+                            {% if listing.type == 'jual' %}Rp {{ listing.price|floatformat:0 }}{% else %}Gratis{% endif %}
+                        </div>
+                    </div>
+                    <span class="type-badge type-{{ listing.type }}">{{ listing.get_type_display }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="color:var(--text-light); font-size:.875rem; text-align:center; padding:1rem;">Tidak ada listing aktif.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div>
+        <div class="card">
+            <div class="card-header"><h3>⭐ Ulasan</h3></div>
+            <div style="display:flex; align-items:center; gap:16px; padding:12px; background:var(--cream); border-radius:10px; margin-bottom:16px;">
+                <div style="font-family:'Fraunces',serif; font-size:2.5rem; font-weight:800; color:var(--green-500);">{{ profile_user.avg_rating }}</div>
+                <div>
+                    <div style="color:var(--amber-500); font-size:1.1rem;">★★★★★</div>
+                    <div style="font-size:.78rem; color:var(--text-light);">{{ reviews|length }} ulasan</div>
+                </div>
+            </div>
+            {% for review in reviews %}
+            <div class="review-card">
+                <div class="review-header">
+                    <span class="reviewer">{{ review.reviewer.username }}</span>
+                    <span class="review-date">⭐ {{ review.rating }}/5</span>
+                </div>
+                <div class="review-text">{{ review.comment|default:"Tidak ada komentar." }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

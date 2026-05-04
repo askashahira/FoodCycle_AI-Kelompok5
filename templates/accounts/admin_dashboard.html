@@ -1,0 +1,294 @@
+{% extends 'base_admin.html' %}
+{% block title %}Admin Dashboard - FoodCycle AI{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+{% block page_subtitle %}{% now "l, j F Y" %} · Selamat bekerja, {{ user.username }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="#" class="btn-admin-outline">📤 Export Laporan</a>
+<button class="btn-admin-notif">🔔 3 Notifikasi</button>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── STAT CARDS ── -->
+<div class="admin-stats-grid">
+
+    <div class="admin-stat-card blue">
+        <div class="admin-stat-label">Total Pengguna</div>
+        <div class="admin-stat-val">{{ total_users }}</div>
+        <div class="admin-stat-trend" style="color:#0284c7;">↑ +12 minggu ini</div>
+    </div>
+
+    <div class="admin-stat-card amber">
+        <div class="admin-stat-label">Listing Aktif</div>
+        <div class="admin-stat-val">{{ active_listings }}</div>
+        <div class="admin-stat-trend" style="color:#92600a;">⚠ 8 menunggu moderasi</div>
+    </div>
+
+    <div class="admin-stat-card green">
+        <div class="admin-stat-label">Transaksi Bulan Ini</div>
+        <div class="admin-stat-val">{{ total_transactions }}</div>
+        <div class="admin-stat-trend" style="color:#166534;">↑ +23% dari bulan lalu</div>
+    </div>
+
+    <div class="admin-stat-card red">
+        <div class="admin-stat-label">Laporan Masalah</div>
+        <div class="admin-stat-val red">3</div>
+        <div class="admin-stat-trend" style="color:#dc2626;">⚠ Perlu ditangani</div>
+    </div>
+
+</div>
+
+<!-- ── CHART + STATS ── -->
+<div class="admin-two-col">
+
+    <!-- Chart -->
+    <div class="admin-card" style="margin-bottom:0;">
+        <div class="admin-card-header">
+            <h3>📝 Aktivitas Transaksi (7 Hari Terakhir)</h3>
+        </div>
+        <canvas id="transactionChart" height="100"></canvas>
+    </div>
+
+    <!-- Progress -->
+    <div class="admin-card" style="margin-bottom:0;">
+        <div class="admin-card-header">
+            <h3>🌍 Statistik Platform</h3>
+        </div>
+        <div class="progress-row">
+            <div>
+                <div class="progress-label">
+                    <span>Makanan Diselamatkan Total</span>
+                    <span>{{ makanan_selamat }} transaksi</span>
+                </div>
+                <div class="admin-progress-bar">
+                    <div class="admin-progress-fill" style="background:#22c55e; width:{% if total_transactions %}{% widthratio makanan_selamat total_transactions 100 %}{% else %}0{% endif %}%;"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="progress-label">
+                    <span>Transaksi Berhasil</span>
+                    <span>{{ completed_transactions }} / {{ total_transactions }}</span>
+                </div>
+                <div class="admin-progress-bar">
+                    <div class="admin-progress-fill" style="background:#38bdf8; width:{% if total_transactions %}{% widthratio completed_transactions total_transactions 100 %}{% else %}0{% endif %}%;"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="progress-label">
+                    <span>Donasi vs Jual</span>
+                    <span>{{ donasi_pct }}% donasi</span>
+                </div>
+                <div class="admin-progress-bar">
+                    <div class="admin-progress-fill" style="background:#f5a623; width:{{ donasi_pct }}%;"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="progress-label">
+                    <span>Pengguna Aktif</span>
+                    <span>{{ total_users }} pengguna</span>
+                </div>
+                <div class="admin-progress-bar">
+                    <div class="admin-progress-fill" style="background:#a78bfa; width:75%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- spacing -->
+<div style="height:18px;"></div>
+
+<!-- ── LISTING MODERASI ── -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h3>🗂 Listing Terbaru ({{ recent_listings|length }})</h3>
+        {% if total_all_listings > 5 %}
+        <a href="{% url 'admin_all_listings' %}">Lihat Semua {{ total_all_listings }} →</a>
+        {% endif %}
+    </div>
+
+    {% if recent_listings %}
+    <div style="overflow-x:auto;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Judul Listing</th>
+                    <th>Pengguna</th>
+                    <th>Tipe</th>
+                    <th>Dikirim</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for listing in recent_listings %}
+                <tr>
+                    <td><strong>{{ listing.title }}</strong></td>
+                    <td style="color:#64748b;">{{ listing.user.username }}</td>
+                    <td>
+                        {% if listing.type == 'jual' %}
+                        <span class="type-badge type-jual">Jual</span>
+                        {% else %}
+                        <span class="type-badge type-donasi">Donasi</span>
+                        {% endif %}
+                    </td>
+                    <td style="color:#64748b; font-size:.82rem;">{{ listing.created_at|date:"d M, H:i" }}</td>
+                    <td>
+                        {% if listing.status == 'aktif' %}
+                        <span class="admin-badge approved">Aktif</span>
+                        {% elif listing.status == 'dibatalkan' %}
+                        <span class="admin-badge rejected">Ditolak</span>
+                        {% elif listing.status == 'terjual' %}
+                        <span class="admin-badge approved">Terjual</span>
+                        {% else %}
+                        <span class="admin-badge pending">{{ listing.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                            <a href="{% url 'surplus_detail' listing.pk %}" class="btn-adm-view">Detail</a>
+                            {% if listing.status == 'aktif' %}
+                            <form method="post" action="{% url 'admin_listing_action' listing.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="tolak">
+                                <button type="submit" class="btn-adm-reject" onclick="return confirm('Tolak listing ini?')">✗ Tolak</button>
+                            </form>
+                            {% elif listing.status == 'dibatalkan' %}
+                            <form method="post" action="{% url 'admin_listing_action' listing.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="setujui">
+                                <button type="submit" class="btn-adm-approve">✓ Aktifkan</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:36px 20px;">
+        <div style="font-size:2rem; margin-bottom:10px;">✅</div>
+        <p style="color:#94a3b8; font-size:.875rem;">Belum ada listing.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ── MANAJEMEN PENGGUNA ── -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h3>👥 Manajemen Pengguna</h3>
+    </div>
+    <div style="overflow-x:auto;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Email</th>
+                    <th>Tipe</th>
+                    <th>Status</th>
+                    <th>Transaksi</th>
+                    <th>Bergabung</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in all_users %}
+                <tr>
+                    <td><strong>{{ u.get_full_name|default:u.username }}</strong></td>
+                    <td style="color:#64748b; font-size:.82rem;">{{ u.email }}</td>
+                    <td style="color:#64748b; font-size:.82rem;">
+                        {% if u.is_staff %}Admin{% elif u.profile.user_type %}{{ u.profile.user_type }}{% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if u.is_active %}
+                        <span><span class="status-dot dot-active"></span>Aktif</span>
+                        {% else %}
+                        <span><span class="status-dot dot-inactive"></span>Banned</span>
+                        {% endif %}
+                    </td>
+                    <td style="color:#64748b;">—</td>
+                    <td style="color:#64748b; font-size:.82rem;">{{ u.date_joined|date:"M Y" }}</td>
+                    <td>
+                        {% if not u.is_superuser %}
+                        <form method="post" action="{% url 'admin_user_ban' u.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            {% if u.is_active %}
+                            <button type="submit" class="btn-adm-ban" onclick="return confirm('Nonaktifkan user ini?')">Nonaktifkan</button>
+                            {% else %}
+                            <button type="submit" class="btn-adm-unban">Aktifkan</button>
+                            {% endif %}
+                        </form>
+                        {% else %}
+                        <span style="font-size:.75rem; color:#94a3b8;">Superuser</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+var chartLabels = {{ chart_labels|safe }};
+var chartData   = {{ chart_data|safe }};
+
+var ctx = document.getElementById('transactionChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: chartLabels,
+        datasets: [{
+            label: 'Transaksi',
+            data: chartData,
+            backgroundColor: function(ctx) {
+                var idx = ctx.dataIndex;
+                var len = chartData.length;
+                // Last bar darker green like mockup
+                return idx === len - 1
+                    ? 'rgba(34,197,94,0.85)'
+                    : 'rgba(34,197,94,0.35)';
+            },
+            borderColor: 'transparent',
+            borderRadius: 8,
+            borderSkipped: false,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#1e293b',
+                titleColor: '#94a3b8',
+                bodyColor: '#f1f5f9',
+                padding: 10,
+                cornerRadius: 8,
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { stepSize: 1, color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 11 } },
+                grid: { color: 'rgba(0,0,0,0.04)' }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 11 } }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

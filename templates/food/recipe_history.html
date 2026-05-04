@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Riwayat Resep{% endblock %}
+{% block page_title %}Riwayat Resep{% endblock %}
+{% block content %}
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:28px;">
+    <div>
+        <h2 style="font-size:1.7rem; font-weight:800;">📖 Riwayat Resep</h2>
+        <p style="color:var(--text-mid); margin-top:4px; font-size:.9rem;">Semua resep yang pernah kamu generate</p>
+    </div>
+    <a href="{% url 'recipe' %}" class="btn-green">✨ Generate Resep Baru</a>
+</div>
+
+{% if history %}
+<div class="recipe-grid">
+    {% for rec in history %}
+    <div class="recipe-card">
+        <div class="recipe-img" style="background:
+            {% cycle 'linear-gradient(135deg,#dcfce7,#86efac)' 'linear-gradient(135deg,#fef3c7,#fde68a)' 'linear-gradient(135deg,#dbeafe,#93c5fd)' 'linear-gradient(135deg,#fde8e8,#fca5a5)' %};">
+            {% cycle '🥘' '🍲' '🍛' '🍗' %}
+        </div>
+        <div class="recipe-body">
+            <h4>{{ rec.recipe_name }}</h4>
+
+            <div style="margin-bottom:12px;">
+                <p style="font-size:.75rem; color:var(--text-light); text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-bottom:4px;">Bahan:</p>
+                <p style="font-size:.875rem; color:var(--text-mid);">{{ rec.ingredients_used }}</p>
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <p style="font-size:.75rem; color:var(--text-light); text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-bottom:4px;">Estimasi Gizi:</p>
+                <p style="font-size:.875rem; color:var(--text-mid);">{{ rec.nutrition_estimate }}</p>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+                <div style="font-family:'Fraunces',serif; font-weight:800; color:var(--green-500); font-size:1.1rem;">
+                    ~Rp {{ rec.price_estimate|floatformat:0 }}
+                </div>
+                <div style="font-size:.75rem; color:var(--text-light);">
+                    {{ rec.generated_at|date:"d M Y H:i" }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p style="font-size:3rem; margin-bottom:1rem;">🍳</p>
+    <p style="font-size:1.1rem; font-weight:600; margin-bottom:.5rem;">Belum ada riwayat resep</p>
+    <p style="color:var(--text-light); margin-bottom:1.5rem; font-size:.9rem;">Generate resep pertamamu sekarang!</p>
+    <a href="{% url 'recipe' %}" class="btn-green">✨ Generate Sekarang</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends 'base_admin.html' %}
+{% block title %}Semua Listing - Admin{% endblock %}
+{% block page_title %}Semua Listing{% endblock %}
+{% block page_subtitle %}Kelola semua listing surplus di platform{% endblock %}
+
+{% block content %}
+
+<!-- Filter -->
+<div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
+    <a href="{% url 'admin_all_listings' %}" 
+       style="padding:7px 16px; border-radius:20px; font-size:.82rem; font-weight:600; text-decoration:none; {% if not status_filter %}background:#38bdf8; color:#0f172a;{% else %}background:#fff; color:#64748b; border:1.5px solid #e2e8f0;{% endif %}">
+        Semua
+    </a>
+    <a href="?status=aktif"
+       style="padding:7px 16px; border-radius:20px; font-size:.82rem; font-weight:600; text-decoration:none; {% if status_filter == 'aktif' %}background:#38bdf8; color:#0f172a;{% else %}background:#fff; color:#64748b; border:1.5px solid #e2e8f0;{% endif %}">
+        Aktif
+    </a>
+    <a href="?status=terjual"
+       style="padding:7px 16px; border-radius:20px; font-size:.82rem; font-weight:600; text-decoration:none; {% if status_filter == 'terjual' %}background:#38bdf8; color:#0f172a;{% else %}background:#fff; color:#64748b; border:1.5px solid #e2e8f0;{% endif %}">
+        Terjual
+    </a>
+    <a href="?status=dibatalkan"
+       style="padding:7px 16px; border-radius:20px; font-size:.82rem; font-weight:600; text-decoration:none; {% if status_filter == 'dibatalkan' %}background:#38bdf8; color:#0f172a;{% else %}background:#fff; color:#64748b; border:1.5px solid #e2e8f0;{% endif %}">
+        Ditolak
+    </a>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h3>🗂 Semua Listing ({{ listings|length }})</h3>
+        <a href="{% url 'admin_dashboard' %}">← Kembali ke Dashboard</a>
+    </div>
+
+    {% if listings %}
+    <div style="overflow-x:auto;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Judul</th>
+                    <th>Pengguna</th>
+                    <th>Tipe</th>
+                    <th>Harga</th>
+                    <th>Tanggal</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for listing in listings %}
+                <tr>
+                    <td><strong>{{ listing.title }}</strong></td>
+                    <td style="color:#64748b;">{{ listing.user.username }}</td>
+                    <td>
+                        {% if listing.type == 'jual' %}
+                        <span class="type-badge type-jual">Jual</span>
+                        {% else %}
+                        <span class="type-badge type-donasi">Donasi</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-weight:600; color:#0284c7;">
+                        {% if listing.type == 'jual' %}Rp {{ listing.price|floatformat:0 }}{% else %}Gratis{% endif %}
+                    </td>
+                    <td style="color:#64748b; font-size:.82rem;">{{ listing.created_at|date:"d M Y" }}</td>
+                    <td>
+                        {% if listing.status == 'aktif' %}
+                        <span class="admin-badge approved">Aktif</span>
+                        {% elif listing.status == 'terjual' %}
+                        <span class="admin-badge approved">Terjual</span>
+                        {% elif listing.status == 'dibatalkan' %}
+                        <span class="admin-badge rejected">Ditolak</span>
+                        {% else %}
+                        <span class="admin-badge pending">{{ listing.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                            <a href="{% url 'surplus_detail' listing.pk %}" class="btn-adm-view">Detail</a>
+                            {% if listing.status == 'aktif' %}
+                            <form method="post" action="{% url 'admin_listing_action' listing.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="tolak">
+                                <button type="submit" class="btn-adm-reject" onclick="return confirm('Tolak?')">✗ Tolak</button>
+                            </form>
+                            {% elif listing.status == 'dibatalkan' %}
+                            <form method="post" action="{% url 'admin_listing_action' listing.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="setujui">
+                                <button type="submit" class="btn-adm-approve">✓ Aktifkan</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:40px;">
+        <p style="color:#94a3b8;">Tidak ada listing.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,305 @@
+{% extends 'base_auth.html' %}
+{% block title %}FoodCycle AI - Kurangi Food Waste{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
+
+<style>
+  /* Landing-page-specific styles — pakai variabel dari style.css, tidak ada duplikasi font */
+
+  .lp-wrap { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+  /* ── NAV ── */
+  .lp-nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 40px;
+    background: rgba(13,43,30,.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .lp-logo {
+    font-family: 'Fraunces', serif; font-size: 1.3rem; font-weight: 800;
+    color: var(--green-400); text-decoration: none;
+  }
+  .lp-nav-links { display: flex; gap: 28px; }
+  .lp-nav-links a {
+    color: rgba(255,255,255,.65); text-decoration: none;
+    font-size: .9rem; transition: color .2s;
+  }
+  .lp-nav-links a:hover { color: var(--green-400); }
+  .lp-nav-cta {
+    background: var(--green-400); color: var(--green-900);
+    border: none; border-radius: 8px; padding: 9px 20px;
+    font-weight: 700; font-size: .9rem;
+    text-decoration: none; display: inline-block;
+    transition: background .2s;
+  }
+  .lp-nav-cta:hover { background: var(--green-300); color: var(--green-900); text-decoration: none; }
+
+  /* ── HERO ── */
+  .lp-hero {
+    min-height: 90vh;
+    background-color: var(--green-900);
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(62,201,138,.18) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(62,201,138,.10) 0%, transparent 60%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 80px 24px 60px;
+  }
+  .lp-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(62,201,138,.12); border: 1px solid rgba(62,201,138,.3);
+    border-radius: 100px; padding: 6px 18px;
+    font-size: 13px; color: var(--green-300);
+    margin-bottom: 28px; letter-spacing: .04em;
+  }
+  .lp-hero h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(2.4rem, 5vw, 4.5rem); font-weight: 800; line-height: 1.1;
+    color: #fff; margin-bottom: 24px; max-width: 820px;
+  }
+  .lp-hero h1 span { color: var(--green-400); }
+  .lp-hero .hero-desc {
+    font-size: 1.1rem; color: rgba(255,255,255,.65); max-width: 520px;
+    line-height: 1.75; margin-bottom: 40px;
+  }
+  .lp-cta-row {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    justify-content: center; margin-bottom: 60px;
+  }
+  .btn-hero-primary {
+    background: var(--green-400); color: var(--green-900);
+    border: none; border-radius: 12px; padding: 14px 32px;
+    font-size: 1rem; font-weight: 700;
+    text-decoration: none; display: inline-block;
+    box-shadow: 0 8px 24px rgba(62,201,138,.3);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn-hero-primary:hover {
+    transform: translateY(-2px); box-shadow: 0 12px 32px rgba(62,201,138,.4);
+    color: var(--green-900); text-decoration: none;
+  }
+  .btn-hero-outline {
+    background: transparent; color: #fff;
+    border: 1.5px solid rgba(255,255,255,.35); border-radius: 12px; padding: 14px 32px;
+    font-size: 1rem; font-weight: 500;
+    text-decoration: none; display: inline-block;
+    transition: border-color .2s, color .2s;
+  }
+  .btn-hero-outline:hover {
+    border-color: var(--green-400); color: var(--green-400); text-decoration: none;
+  }
+  .lp-stats { display: flex; gap: 48px; flex-wrap: wrap; justify-content: center; }
+  .lp-stat-item { text-align: center; }
+  .lp-stat-item .num {
+    font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 800; color: var(--green-400);
+  }
+  .lp-stat-item .lbl { font-size: .82rem; color: rgba(255,255,255,.5); margin-top: 4px; }
+
+  /* ── SECTION LABELS ── */
+  .lp-section-label {
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--green-500); font-weight: 700; margin-bottom: 12px;
+  }
+  .lp-section-title {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.7rem, 3vw, 2.5rem); font-weight: 800;
+    color: var(--text-dark); margin-bottom: 48px; line-height: 1.2;
+  }
+
+  /* ── FEATURES ── */
+  .lp-features { background: var(--cream); padding: 80px 24px; }
+  .lp-features-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px; max-width: 1100px; margin: 0 auto;
+  }
+  .lp-feat-card {
+    background: #fff; border-radius: var(--radius);
+    padding: 32px 28px; box-shadow: var(--card-shadow); transition: transform .2s;
+  }
+  .lp-feat-card:hover { transform: translateY(-4px); }
+  .lp-feat-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; margin-bottom: 18px;
+  }
+  .lp-feat-card h3 { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; }
+  .lp-feat-card p { font-size: .88rem; color: var(--text-mid); line-height: 1.65; margin-bottom: 0; }
+
+  /* ── HOW IT WORKS ── */
+  .lp-how { background: #fff; padding: 80px 24px; }
+  .lp-how-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 40px; max-width: 860px; margin: 0 auto;
+    position: relative;
+  }
+  @media (min-width: 640px) {
+    .lp-how-grid::before {
+      content: ''; position: absolute;
+      top: 32px; left: 18%; right: 18%; height: 2px;
+      background: linear-gradient(90deg, var(--green-100), var(--green-400), var(--green-100));
+      z-index: 0;
+    }
+  }
+  .lp-how-step { text-align: center; position: relative; z-index: 1; }
+  .lp-how-icon {
+    width: 64px; height: 64px; border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin: 0 auto 20px;
+  }
+  .lp-how-step h3 { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; }
+  .lp-how-step p { font-size: .88rem; color: var(--text-mid); line-height: 1.65; margin-bottom: 0; }
+
+  /* ── CTA ── */
+  .lp-cta-section { background: var(--green-800); padding: 80px 24px; text-align: center; }
+  .lp-cta-section .lp-section-label { color: var(--green-300); }
+  .lp-cta-section .lp-section-title { color: #fff; margin-bottom: 16px; }
+  .lp-cta-section .cta-desc {
+    color: rgba(255,255,255,.65); max-width: 540px; margin: 0 auto 32px;
+    font-size: 1rem; line-height: 1.7;
+  }
+  .btn-cta {
+    background: var(--green-400); color: var(--green-900);
+    border-radius: 12px; padding: 16px 40px;
+    font-size: 1.05rem; font-weight: 700;
+    text-decoration: none; display: inline-block;
+    box-shadow: 0 8px 24px rgba(62,201,138,.3);
+    transition: transform .15s;
+  }
+  .btn-cta:hover { transform: translateY(-2px); color: var(--green-900); text-decoration: none; }
+
+  /* ── FOOTER ── */
+  .lp-footer {
+    background: var(--green-900); padding: 40px 24px;
+    text-align: center; color: rgba(255,255,255,.45); font-size: .85rem;
+  }
+  .lp-footer-logo { font-family: 'Fraunces', serif; font-size: 1.1rem; color: var(--green-400); margin-bottom: 12px; }
+  .lp-footer p { margin-bottom: 0; }
+  .lp-footer p + p { margin-top: 8px; }
+
+  @media (max-width: 640px) {
+    .lp-nav { padding: 14px 20px; }
+    .lp-nav-links { display: none; }
+    .lp-hero { padding: 100px 20px 50px; min-height: auto; }
+    .lp-stats { gap: 28px; }
+    .lp-features, .lp-how, .lp-cta-section { padding: 60px 20px; }
+  }
+</style>
+
+<div class="lp-wrap">
+
+  <!-- ══ NAV ══ -->
+  <nav class="lp-nav">
+    <a href="#" class="lp-logo">🌱 FoodCycle AI</a>
+    <div class="lp-nav-links">
+      <a href="#fitur">Fitur</a>
+      <a href="#cara-kerja">Cara Kerja</a>
+      <a href="#tentang">Tentang</a>
+    </div>
+    <a href="{% url 'register' %}" class="lp-nav-cta">Mulai Gratis</a>
+  </nav>
+
+  <!-- ══ HERO ══ -->
+  <section class="lp-hero">
+    <div class="lp-badge">✨ Didukung Kecerdasan Buatan</div>
+    <h1>Kurangi <span>Food Waste</span>,<br>Mulai dari Dapurmu</h1>
+    <p class="hero-desc">FoodCycle AI membantu kamu mengelola stok bahan makanan, mendapatkan rekomendasi resep cerdas, dan berbagi surplus makanan dengan sesama di sekitarmu.</p>
+    <div class="lp-cta-row">
+      <a href="{% url 'register' %}" class="btn-hero-primary">🚀 Daftar Sekarang — Gratis</a>
+      <a href="{% url 'login' %}" class="btn-hero-outline">▶ Masuk ke Akun</a>
+    </div>
+    <div class="lp-stats">
+      <div class="lp-stat-item"><div class="num">1.5jt</div><div class="lbl">Porsi Makanan Diselamatkan</div></div>
+      <div class="lp-stat-item"><div class="num">33%</div><div class="lbl">Makanan Global Terbuang</div></div>
+      <div class="lp-stat-item"><div class="num">3km</div><div class="lbl">Radius Distribusi Lokal</div></div>
+      <div class="lp-stat-item"><div class="num">SDG12</div><div class="lbl">Konsumsi Bertanggung Jawab</div></div>
+    </div>
+  </section>
+
+  <!-- ══ FEATURES ══ -->
+  <section class="lp-features" id="fitur">
+    <div style="max-width:1100px; margin:0 auto;">
+      <div style="text-align:center; max-width:600px; margin:0 auto 48px;">
+        <div class="lp-section-label">Fitur Utama</div>
+        <div class="lp-section-title">Semua yang kamu butuhkan<br>untuk nol food waste</div>
+      </div>
+      <div class="lp-features-grid">
+        <div class="lp-feat-card">
+          <div class="lp-feat-icon" style="background:#dcfce7;">🥦</div>
+          <h3>Manajemen Stok Cerdas</h3>
+          <p>Catat bahan makanan dan tanggal kedaluwarsa. Dapatkan notifikasi otomatis sebelum bahan terbuang sia-sia.</p>
+        </div>
+        <div class="lp-feat-card">
+          <div class="lp-feat-icon" style="background:#fef3c7;">🤖</div>
+          <h3>Rekomendasi Resep AI</h3>
+          <p>AI kami menganalisis stokmu dan memprioritaskan bahan yang hampir kedaluwarsa untuk dimasak lebih dulu.</p>
+        </div>
+        <div class="lp-feat-card">
+          <div class="lp-feat-icon" style="background:#dbeafe;">🗺️</div>
+          <h3>Surplus Exchange Lokal</h3>
+          <p>Jual atau donasikan surplus makananmu ke warga sekitar dalam radius 3–5 km lewat peta interaktif.</p>
+        </div>
+        <div class="lp-feat-card">
+          <div class="lp-feat-icon" style="background:#f5f3ff;">📊</div>
+          <h3>Dashboard Dampak</h3>
+          <p>Pantau seberapa banyak makanan yang berhasil kamu selamatkan dan dampak positifnya terhadap lingkungan.</p>
+        </div>
+        <div class="lp-feat-card">
+          <div class="lp-feat-icon" style="background:#fde8e8;">⭐</div>
+          <h3>Sistem Rating & Review</h3>
+          <p>Bangun kepercayaan komunitas melalui sistem ulasan transparan antara penjual, donatur, dan penerima.</p>
+        </div>
+        <div class="lp-feat-card">
+          <div class="lp-feat-icon" style="background:#dcfce7;">🔔</div>
+          <h3>Notifikasi Kedaluwarsa</h3>
+          <p>Pengingat cerdas sebelum bahan makananmu mendekati tanggal kedaluwarsa agar tidak ada yang terbuang.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ HOW IT WORKS ══ -->
+  <section class="lp-how" id="cara-kerja">
+    <div style="max-width:900px; margin:0 auto; text-align:center;">
+      <div class="lp-section-label">Cara Kerja</div>
+      <div class="lp-section-title">3 Langkah Sederhana</div>
+      <div class="lp-how-grid">
+        <div class="lp-how-step">
+          <div class="lp-how-icon" style="background: var(--green-100);">📥</div>
+          <h3>1. Input Stok</h3>
+          <p>Tambahkan bahan makanan yang kamu miliki beserta tanggal kedaluwarasanya ke dalam sistem.</p>
+        </div>
+        <div class="lp-how-step">
+          <div class="lp-how-icon" style="background: #fef3c7;">✨</div>
+          <h3>2. Dapatkan Rekomendasi</h3>
+          <p>AI langsung menganalisis dan menyarankan resep terbaik berdasarkan stok yang kamu punya.</p>
+        </div>
+        <div class="lp-how-step">
+          <div class="lp-how-icon" style="background: #dbeafe;">🤝</div>
+          <h3>3. Bagikan Surplus</h3>
+          <p>Punya makanan berlebih? Upload ke marketplace dan distribusikan ke orang sekitar.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ CTA ══ -->
+  <section class="lp-cta-section" id="tentang">
+    <div class="lp-section-label">Bergabung Sekarang</div>
+    <div class="lp-section-title">Mulai Selamatkan Makanan Hari Ini</div>
+    <p class="cta-desc">Bergabunglah dengan ribuan pengguna yang sudah mengurangi food waste bersama FoodCycle AI. Gratis sepenuhnya untuk digunakan.</p>
+    <a href="{% url 'register' %}" class="btn-cta">Daftar Akun Gratis →</a>
+  </section>
+
+  <!-- ══ FOOTER ══ -->
+  <footer class="lp-footer">
+    <div class="lp-footer-logo">🌱 FoodCycle AI</div>
+    <p>© 2026 Kelompok 5 – Departemen Informatika, Universitas Syiah Kuala</p>
+    <p>Mendukung SDG 12 & SDG 13 · Proyek Perangkat Lunak</p>
+  </footer>
+
+</div>
+
+{% endblock %}

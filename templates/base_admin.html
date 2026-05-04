@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin - FoodCycle AI{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,300&display=swap" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+            color: #1e293b;
+        }
+
+        /* ── LAYOUT ── */
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ══════════════════════════════
+           SIDEBAR
+        ══════════════════════════════ */
+        .admin-sidebar {
+            width: 210px;
+            flex-shrink: 0;
+            background: #1e2d3d;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 0; top: 0;
+            z-index: 100;
+        }
+
+        /* Logo */
+        .admin-sb-logo {
+            padding: 22px 20px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        .admin-sb-logo .logo-mark {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .admin-sb-logo .logo-icon {
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+        .admin-sb-logo .logo-text {
+            font-family: 'Fraunces', serif;
+            font-size: 1rem;
+            font-weight: 800;
+            color: #4ade80;
+            line-height: 1.15;
+        }
+        .admin-sb-logo .logo-sub {
+            font-size: .68rem;
+            color: rgba(255,255,255,0.35);
+            margin-top: 5px;
+            letter-spacing: .03em;
+        }
+
+        /* Section label */
+        .admin-sb-section {
+            padding: 18px 16px 6px;
+            font-size: .62rem;
+            color: rgba(255,255,255,0.28);
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            font-weight: 700;
+        }
+
+        /* Nav */
+        .admin-sb-nav {
+            padding: 6px 0;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .admin-sb-nav::-webkit-scrollbar { width: 0; }
+
+        .admin-sb-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            margin: 1px 8px;
+            border-radius: 8px;
+            color: rgba(255,255,255,0.5);
+            font-size: .845rem;
+            text-decoration: none;
+            transition: all .18s;
+            cursor: pointer;
+            font-weight: 400;
+        }
+        .admin-sb-item:hover {
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.9);
+        }
+        .admin-sb-item.active {
+            background: rgba(74,222,128,0.13);
+            color: #4ade80;
+            font-weight: 600;
+        }
+        .admin-sb-item .sb-icon {
+            font-size: 15px;
+            flex-shrink: 0;
+            width: 18px;
+            text-align: center;
+        }
+
+        /* Footer */
+        .admin-sb-footer {
+            padding: 14px;
+            border-top: 1px solid rgba(255,255,255,0.07);
+        }
+        .admin-sb-user {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 10px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+        }
+        .admin-sb-avatar {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            background: #1d4ed8;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Fraunces', serif;
+            font-weight: 800;
+            color: #bfdbfe;
+            font-size: .8rem;
+            flex-shrink: 0;
+        }
+        .admin-sb-username {
+            color: rgba(255,255,255,0.8);
+            font-size: .8rem;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+        .admin-sb-role {
+            color: rgba(255,255,255,0.28);
+            font-size: .65rem;
+        }
+        .admin-sb-logout {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255,255,255,0.32);
+            font-size: .8rem;
+            text-decoration: none;
+            padding: 7px 10px;
+            border-radius: 7px;
+            transition: all .18s;
+        }
+        .admin-sb-logout:hover {
+            color: #f87171;
+            background: rgba(248,113,113,0.08);
+        }
+
+        /* ══════════════════════════════
+           MAIN WRAPPER
+        ══════════════════════════════ */
+        .admin-main-wrapper {
+            margin-left: 210px;
+            flex: 1;
+            background: #f1f5f9;
+            min-height: 100vh;
+        }
+
+        /* ── TOPBAR ── */
+        .admin-topbar {
+            background: #fff;
+            padding: 16px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .admin-topbar-left h1 {
+            font-family: 'Fraunces', serif;
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -.02em;
+        }
+        .admin-topbar-left p {
+            font-size: .78rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        .admin-topbar-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* ── PAGE CONTENT ── */
+        .admin-page-content {
+            padding: 26px 28px;
+        }
+
+        /* ── MESSAGES ── */
+        .admin-message {
+            background: #dcfce7;
+            color: #166534;
+            padding: 11px 16px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: .875rem;
+            border-left: 3px solid #22c55e;
+        }
+
+        /* ══════════════════════════════
+           BUTTONS
+        ══════════════════════════════ */
+        .btn-admin-primary {
+            background: #4ade80;
+            color: #0f172a;
+            border: none;
+            border-radius: 9px;
+            padding: 9px 18px;
+            font-size: .84rem;
+            font-weight: 700;
+            font-family: 'Fraunces', serif;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all .15s;
+        }
+        .btn-admin-primary:hover {
+            background: #86efac;
+            transform: translateY(-1px);
+        }
+
+        .btn-admin-outline {
+            background: #fff;
+            color: #475569;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 9px;
+            padding: 9px 16px;
+            font-size: .84rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all .18s;
+        }
+        .btn-admin-outline:hover {
+            border-color: #94a3b8;
+            color: #1e293b;
+        }
+
+        .btn-admin-notif {
+            background: #fbbf24;
+            color: #78350f;
+            border: none;
+            border-radius: 9px;
+            padding: 9px 16px;
+            font-size: .84rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ══════════════════════════════
+           STAT CARDS
+        ══════════════════════════════ */
+        .admin-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .admin-stat-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px 20px 18px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+            position: relative;
+            overflow: hidden;
+            border-top: 3px solid transparent;
+        }
+        .admin-stat-card.blue   { border-top-color: #38bdf8; }
+        .admin-stat-card.amber  { border-top-color: #f5a623; }
+        .admin-stat-card.green  { border-top-color: #22c55e; }
+        .admin-stat-card.red    { border-top-color: #f26060; }
+
+        .admin-stat-label {
+            font-size: .68rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .admin-stat-val {
+            font-family: 'Fraunces', serif;
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1;
+        }
+        .admin-stat-val.red { color: #dc2626; }
+        .admin-stat-trend {
+            font-size: .73rem;
+            margin-top: 9px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* ══════════════════════════════
+           TWO COL
+        ══════════════════════════════ */
+        .admin-two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        /* ══════════════════════════════
+           CARDS
+        ══════════════════════════════ */
+        .admin-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+            margin-bottom: 18px;
+        }
+        .admin-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+        .admin-card-header h3 {
+            font-family: 'Fraunces', serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .admin-card-header a {
+            font-size: .78rem;
+            color: #0284c7;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .admin-card-header a:hover { color: #0369a1; }
+
+        /* ══════════════════════════════
+           TABLE
+        ══════════════════════════════ */
+        .admin-table { width: 100%; border-collapse: collapse; }
+        .admin-table th {
+            text-align: left;
+            font-size: .67rem;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            padding: 8px 12px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+        .admin-table td {
+            padding: 12px;
+            font-size: .875rem;
+            border-bottom: 1px solid #f8fafc;
+            color: #1e293b;
+            vertical-align: middle;
+        }
+        .admin-table tr:last-child td { border-bottom: none; }
+        .admin-table tr:hover td { background: #f8fafc; }
+
+        /* ══════════════════════════════
+           BADGES
+        ══════════════════════════════ */
+        .admin-badge {
+            padding: 3px 11px;
+            border-radius: 20px;
+            font-size: .7rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+        .admin-badge.pending  { background: #fff4de; color: #92600a; }
+        .admin-badge.approved { background: #dcfce7; color: #166534; }
+        .admin-badge.rejected { background: #fde8e8; color: #991b1b; }
+        .admin-badge.active   { background: #dcfce7; color: #166534; }
+
+        .type-badge {
+            padding: 3px 11px;
+            border-radius: 20px;
+            font-size: .7rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+        .type-jual   { background: #dbeafe; color: #1d4ed8; }
+        .type-donasi { background: #dcfce7; color: #166534; }
+
+        /* ══════════════════════════════
+           STATUS DOT
+        ══════════════════════════════ */
+        .status-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .dot-active   { background: #22c55e; }
+        .dot-inactive { background: #f26060; }
+        .dot-pending  { background: #f5a623; }
+
+        /* ══════════════════════════════
+           ACTION BUTTONS
+        ══════════════════════════════ */
+        .btn-adm-approve {
+            background: #dcfce7; color: #166534;
+            border: none; border-radius: 7px;
+            padding: 5px 12px;
+            font-size: .74rem; font-weight: 700;
+            cursor: pointer; transition: background .15s;
+        }
+        .btn-adm-approve:hover { background: #bbf7d0; }
+
+        .btn-adm-reject {
+            background: #fde8e8; color: #991b1b;
+            border: none; border-radius: 7px;
+            padding: 5px 12px;
+            font-size: .74rem; font-weight: 700;
+            cursor: pointer; transition: background .15s;
+        }
+        .btn-adm-reject:hover { background: #fecaca; }
+
+        .btn-adm-view {
+            background: #e0f2fe; color: #0369a1;
+            border: none; border-radius: 7px;
+            padding: 5px 12px;
+            font-size: .74rem; font-weight: 700;
+            cursor: pointer; text-decoration: none;
+            display: inline-block; transition: background .15s;
+        }
+        .btn-adm-view:hover { background: #bae6fd; }
+
+        .btn-adm-ban {
+            background: #fde8e8; color: #991b1b;
+            border: none; border-radius: 7px;
+            padding: 5px 12px;
+            font-size: .74rem; font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-adm-unban {
+            background: #dcfce7; color: #166534;
+            border: none; border-radius: 7px;
+            padding: 5px 12px;
+            font-size: .74rem; font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* ══════════════════════════════
+           PROGRESS BARS
+        ══════════════════════════════ */
+        .progress-row { display: flex; flex-direction: column; gap: 16px; }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: .82rem;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+        .progress-label span:last-child { font-weight: 700; color: #0f172a; }
+        .admin-progress-bar {
+            height: 7px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+        .admin-progress-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        /* ══════════════════════════════
+           RESPONSIVE
+        ══════════════════════════════ */
+        @media (max-width: 1024px) {
+            .admin-stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 900px) {
+            .admin-sidebar { display: none; }
+            .admin-main-wrapper { margin-left: 0; }
+            .admin-two-col { grid-template-columns: 1fr; }
+            .admin-stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .admin-page-content { padding: 18px 16px; }
+        }
+        @media (max-width: 480px) {
+            .admin-stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="admin-layout">
+
+    <!-- ══════════════════════════════
+         SIDEBAR
+    ══════════════════════════════ -->
+    <aside class="admin-sidebar">
+        <div class="admin-sb-logo">
+            <div class="logo-mark">
+                <span class="logo-icon">🌱</span>
+                <span class="logo-text">FoodCycle<br>AI</span>
+            </div>
+            <div class="logo-sub">Admin Control Panel</div>
+        </div>
+
+        <div class="admin-sb-nav">
+    <div class="admin-sb-section">Overview</div>
+    <a href="{% url 'admin_dashboard' %}"
+       class="admin-sb-item {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+        <span class="sb-icon">📊</span> Dashboard
+    </a>
+
+    <div class="admin-sb-section">Manajemen</div>
+    <a href="{% url 'admin_all_listings' %}"
+       class="admin-sb-item {% if request.resolver_match.url_name == 'admin_all_listings' %}active{% endif %}">
+        <span class="sb-icon">🗂</span> Semua Listing
+    </a>
+    <a href="{% url 'admin_all_users' %}"
+       class="admin-sb-item {% if request.resolver_match.url_name == 'admin_all_users' %}active{% endif %}">
+        <span class="sb-icon">👥</span> Pengguna
+    </a>
+    <a href="{% url 'admin_all_transactions' %}"
+       class="admin-sb-item {% if request.resolver_match.url_name == 'my_orders' %}active{% endif %}">
+        <span class="sb-icon">🔄</span> Transaksi
+    </a>
+
+    <div class="admin-sb-section">Sistem</div>
+    <a href="{% url 'dashboard' %}" class="admin-sb-item">
+        <span class="sb-icon">🏠</span> Kembali ke App
+    </a>
+</div>
+
+        <div class="admin-sb-footer">
+            <div class="admin-sb-user">
+                <div class="admin-sb-avatar">{{ user.username|first|upper }}</div>
+                <div>
+                    <div class="admin-sb-username">{{ user.username }}</div>
+                    <div class="admin-sb-role">Administrator</div>
+                </div>
+            </div>
+            <a href="{% url 'logout' %}" class="admin-sb-logout">🚪 Logout</a>
+        </div>
+    </aside>
+
+    <!-- ══════════════════════════════
+         MAIN
+    ══════════════════════════════ -->
+    <div class="admin-main-wrapper">
+
+        <div class="admin-topbar">
+            <div class="admin-topbar-left">
+                <h1>{% block page_title %}Admin Dashboard{% endblock %}</h1>
+                <p>{% block page_subtitle %}Pantau dan kelola platform FoodCycle AI{% endblock %}</p>
+            </div>
+            <div class="admin-topbar-right">
+                {% block topbar_actions %}
+                <a href="{% url 'dashboard' %}" class="btn-admin-outline">← Kembali ke App</a>
+                {% endblock %}
+            </div>
+        </div>
+
+        <div class="admin-page-content">
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="admin-message">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
+            {% block content %}{% endblock %}
+        </div>
+
+    </div>
+</div>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

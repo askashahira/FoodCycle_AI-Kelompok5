@@ -1,0 +1,98 @@
+{% extends 'base_admin.html' %}
+{% block title %}Semua Transaksi - Admin{% endblock %}
+{% block page_title %}Manajemen Transaksi{% endblock %}
+{% block page_subtitle %}Semua transaksi yang terjadi di platform{% endblock %}
+
+{% block content %}
+
+<!-- Filter -->
+<div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
+    <a href="{% url 'admin_all_transactions' %}"
+       style="padding:7px 16px; border-radius:20px; font-size:.82rem; font-weight:600; text-decoration:none; {% if not status_filter %}background:#38bdf8; color:#0f172a;{% else %}background:#fff; color:#64748b; border:1.5px solid #e2e8f0;{% endif %}">
+        Semua
+    </a>
+    <a href="?status=pending"
+       style="padding:7px 16px; border-radius:20px; font-size:.82rem; font-weight:600; text-decoration:none; {% if status_filter == 'pending' %}background:#38bdf8; color:#0f172a;{% else %}background:#fff; color:#64748b; border:1.5px solid #e2e8f0;{% endif %}">
+        Pending
+    </a>
+    <a href="?status=confirmed"
+       style="padding:7px 16px; border-radius:20px; font-size:.82rem; font-weight:600; text-decoration:none; {% if status_filter == 'confirmed' %}background:#38bdf8; color:#0f172a;{% else %}background:#fff; color:#64748b; border:1.5px solid #e2e8f0;{% endif %}">
+        Dikonfirmasi
+    </a>
+    <a href="?status=completed"
+       style="padding:7px 16px; border-radius:20px; font-size:.82rem; font-weight:600; text-decoration:none; {% if status_filter == 'completed' %}background:#38bdf8; color:#0f172a;{% else %}background:#fff; color:#64748b; border:1.5px solid #e2e8f0;{% endif %}">
+        Selesai
+    </a>
+    <a href="?status=cancelled"
+       style="padding:7px 16px; border-radius:20px; font-size:.82rem; font-weight:600; text-decoration:none; {% if status_filter == 'cancelled' %}background:#38bdf8; color:#0f172a;{% else %}background:#fff; color:#64748b; border:1.5px solid #e2e8f0;{% endif %}">
+        Dibatalkan
+    </a>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h3>🔄 Semua Transaksi ({{ transactions|length }})</h3>
+        <a href="{% url 'admin_dashboard' %}">← Kembali ke Dashboard</a>
+    </div>
+
+    {% if transactions %}
+    <div style="overflow-x:auto;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Penjual</th>
+                    <th>Pembeli</th>
+                    <th>Tipe</th>
+                    <th>Harga</th>
+                    <th>Tanggal</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr>
+                    <td>
+                        <strong>{{ t.listing.title }}</strong>
+                    </td>
+                    <td style="color:#64748b; font-size:.82rem;">{{ t.listing.user.username }}</td>
+                    <td style="color:#64748b; font-size:.82rem;">{{ t.buyer.username }}</td>
+                    <td>
+                        {% if t.listing.type == 'jual' %}
+                        <span class="type-badge type-jual">Jual</span>
+                        {% else %}
+                        <span class="type-badge type-donasi">Donasi</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-weight:600; color:#0284c7;">
+                        {% if t.listing.type == 'jual' %}
+                            Rp {{ t.listing.price|floatformat:0 }}
+                        {% else %}
+                            Gratis
+                        {% endif %}
+                    </td>
+                    <td style="color:#64748b; font-size:.82rem;">{{ t.transaction_date|date:"d M Y, H:i" }}</td>
+                    <td>
+                        {% if t.status == 'pending' %}
+                            <span class="admin-badge pending">Menunggu</span>
+                        {% elif t.status == 'confirmed' %}
+                            <span class="admin-badge" style="background:#dbeafe; color:#1d4ed8;">Dikonfirmasi</span>
+                        {% elif t.status == 'completed' %}
+                            <span class="admin-badge approved">Selesai</span>
+                        {% else %}
+                            <span class="admin-badge rejected">Dibatalkan</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:40px;">
+        <div style="font-size:2rem; margin-bottom:10px;">📭</div>
+        <p style="color:#94a3b8; font-size:.875rem;">Belum ada transaksi.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

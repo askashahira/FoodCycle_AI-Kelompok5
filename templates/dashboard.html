@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - FoodCycle AI{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h2>Selamat Datang, {{ user.username }}! 👋</h2>
+    <p>{% now "l, d F Y" %} · Pantau stok dan aktivitasmu hari ini</p>
+</div>
+
+<!-- ── STATS ROW ── -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon" style="background:#dcfce7;">🥦</div>
+        <div class="stat-info">
+            <div class="val">{{ total_items }}</div>
+            <div class="key">Total Bahan Makanan</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:#fde8e8;">⚠️</div>
+        <div class="stat-info">
+            <div class="val" style="color:var(--red-400);">{{ near_expiry_count }}</div>
+            <div class="key">Hampir Kedaluwarsa</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:var(--green-100);">♻️</div>
+        <div class="stat-info">
+            <div class="val" style="color:var(--green-500);">{{ expired|length }}</div>
+            <div class="key">Sudah Kedaluwarsa</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:#fef3c7;">⭐</div>
+        <div class="stat-info">
+            <div class="val" style="color:var(--amber-500);">{{ avg_rating }}</div>
+            <div class="key">Rating Rata-Rata</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── MAIN GRID ── -->
+<div class="dashboard-grid">
+
+    <!-- Kolom Kiri -->
+    <div>
+        <!-- Stok Terkini -->
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-header">
+                <h3>📦 Stok Terkini</h3>
+                <a href="{% url 'food_list' %}" class="card-action">Lihat Semua →</a>
+            </div>
+            {% if near_expiry %}
+                {% for item in near_expiry %}
+                <div class="food-item-row">
+                    <div>
+                        <div class="food-name">{{ item.name }}</div>
+                        <div class="food-meta">{{ item.get_category_display }} · {{ item.quantity }} {{ item.unit }}</div>
+                    </div>
+                    <span class="expiry-badge expiry-urgent">Exp: {{ item.expiry_date }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align:center; padding:24px 0; color:var(--text-light);">
+                    <div style="font-size:2rem; margin-bottom:8px;">🎉</div>
+                    <div style="font-size:.9rem;">Tidak ada bahan yang hampir kedaluwarsa</div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Dampak Lingkungan -->
+        <div class="card">
+            <div class="card-header">
+                <h3>🌍 Dampak Lingkungan</h3>
+                <span class="card-action">Akumulasi total</span>
+            </div>
+            {% if food_saved_kg > 0 %}
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>CO₂ Dihindari</span>
+                        <span style="font-weight:700;">{{ co2_avoided_kg }} kg</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:{{ co2_pct }}%; background:var(--green-400);"></div>
+                    </div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>Air Dihindari</span>
+                        <span style="font-weight:700;">{{ water_avoided_l }} liter</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:{{ water_pct }}%; background:#38bdf8;"></div>
+                    </div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>Makanan Diselamatkan</span>
+                        <span style="font-weight:700;">{{ food_saved_kg }} kg</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:{{ food_pct }}%; background:var(--amber-500);"></div>
+                    </div>
+                </div>
+                <p style="font-size:.75rem; color:var(--text-light); margin-top:12px; margin-bottom:0;">
+                    * Estimasi berdasarkan transaksi yang selesai
+                </p>
+            {% else %}
+                <div style="text-align:center; padding:24px 0; color:var(--text-light);">
+                    <div style="font-size:2rem; margin-bottom:8px;">🌱</div>
+                    <div style="font-size:.9rem;">Belum ada transaksi selesai.<br>Mulai berbagi surplus untuk melihat dampakmu!</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Kolom Kanan -->
+    <div>
+        <!-- Notifikasi -->
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-header"><h3>🔔 Notifikasi</h3></div>
+            {% if near_expiry %}
+                {% for item in near_expiry|slice:":3" %}
+                <div class="alert-item">
+                    <div class="alert-icon">🥬</div>
+                    <div class="alert-text">
+                        <strong>{{ item.name }} hampir kedaluwarsa!</strong>
+                        Berakhir {{ item.expiry_date }}.
+                        <a href="{% url 'recipe' %}" style="color:var(--green-500); font-weight:600;">Lihat resep AI →</a>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if near_expiry_count > 3 %}
+                <div style="text-align:center; padding-top:8px;">
+                    <a href="{% url 'food_list' %}" style="font-size:.82rem; color:var(--green-500); font-weight:600;">
+                        +{{ near_expiry_count|add:"-3" }} notifikasi lainnya →
+                    </a>
+                </div>
+                {% endif %}
+            {% else %}
+                <div style="text-align:center; padding:20px 0; color:var(--text-light);">
+                    <div style="font-size:1.8rem; margin-bottom:8px;">✅</div>
+                    <div style="font-size:.88rem;">Semua bahan dalam kondisi aman</div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Aktivitas Terbaru -->
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-header"><h3>📋 Aktivitas Terbaru</h3></div>
+            {% if activities %}
+                {% for act in activities %}
+                <div class="food-item-row">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="font-size:1.2rem; flex-shrink:0;">{{ act.icon }}</div>
+                        <div>
+                            <div class="food-name">{{ act.title }}</div>
+                            <div class="food-meta">{{ act.meta }}</div>
+                        </div>
+                    </div>
+                    {% if act.badge %}
+                        <span class="{% if act.badge_class %}{{ act.badge_class }}{% else %}expiry-badge expiry-ok{% endif %}"
+                              style="font-size:.72rem; padding:3px 10px; border-radius:20px; font-weight:700; flex-shrink:0;">
+                            {{ act.badge }}
+                        </span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align:center; padding:24px 0; color:var(--text-light);">
+                    <div style="font-size:1.8rem; margin-bottom:8px;">📭</div>
+                    <div style="font-size:.88rem;">Belum ada aktivitas</div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Aksi Cepat -->
+        <div class="card">
+            <div class="card-header"><h3>⚡ Aksi Cepat</h3></div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:4px;">
+                <a href="{% url 'food_add' %}" class="btn-green" style="text-align:center;">
+                    ➕ Tambah Bahan Makanan
+                </a>
+                <a href="{% url 'recipe' %}" class="btn-green" style="text-align:center; background:var(--green-800);">
+                    🤖 Generate Resep AI
+                </a>
+                <a href="{% url 'surplus_create' %}" class="btn-green" style="text-align:center; background:var(--green-700);">
+                    📝 Buat Listing Surplus
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

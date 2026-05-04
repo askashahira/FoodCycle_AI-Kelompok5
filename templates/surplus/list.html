@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% block title %}Surplus Exchange{% endblock %}
+{% block page_title %}Surplus Exchange{% endblock %}
+
+{% block content %}
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+  /* ── Filter buttons ── */
+  .filter-row { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; align-items:center; }
+  .filter-pill {
+    padding:7px 16px; border-radius:20px;
+    border:1.5px solid var(--border);
+    background:#fff; font-size:.82rem; cursor:pointer;
+    font-weight:500; transition:all .15s;
+    text-decoration:none; color:var(--text-mid);
+    white-space:nowrap;
+  }
+  .filter-pill:hover,
+  .filter-pill.active { background:var(--green-500); color:#fff; border-color:var(--green-500); text-decoration:none; }
+  .filter-pill-right { margin-left:auto; background:var(--warm-white); color:var(--text-mid); }
+
+  /* ── 2-column layout ── */
+  .surplus-exchange-layout {
+    display:grid;
+    grid-template-columns:360px 1fr;
+    gap:20px;
+    align-items:start;
+  }
+
+  /* ── List panel ── */
+  .surplus-list-panel {
+    display:flex; flex-direction:column; gap:14px;
+    max-height:75vh; overflow-y:auto; padding-right:4px;
+  }
+  .surplus-list-panel::-webkit-scrollbar { width:4px; }
+  .surplus-list-panel::-webkit-scrollbar-track { background:#eee; border-radius:4px; }
+  .surplus-list-panel::-webkit-scrollbar-thumb { background:var(--green-400); border-radius:4px; }
+
+  /* ── Surplus item card ── */
+  .surplus-item {
+    background:#fff; border-radius:var(--radius-sm); padding:16px;
+    box-shadow:var(--card-shadow); cursor:pointer;
+    border:2px solid transparent; transition:border-color .2s;
+    text-decoration:none; display:block; color:inherit;
+  }
+  .surplus-item:hover { border-color:var(--green-300); text-decoration:none; color:inherit; }
+  .surplus-item.selected { border-color:var(--green-400); }
+  .surplus-item-header {
+    display:flex; justify-content:space-between;
+    align-items:flex-start; margin-bottom:8px;
+  }
+  .surplus-item-header h4 { font-size:.95rem; font-weight:700; margin:0; flex:1; padding-right:8px; }
+  .surplus-item-meta { font-size:.8rem; color:var(--text-mid); display:flex; gap:12px; flex-wrap:wrap; }
+  .surplus-item-footer { margin-top:8px; font-size:.8rem; color:var(--text-mid); }
+
+  /* ── Map panel ── */
+  .map-panel {
+    position:sticky; top:80px;
+    background:var(--green-100); border-radius:var(--radius);
+    overflow:hidden; height:75vh;
+  }
+  #map { height:100%; width:100%; }
+
+  /* ── Alert lokasi ── */
+  .location-alert {
+    display:flex; align-items:center; gap:10px;
+    padding:12px 16px; border-radius:var(--radius-sm);
+    background:#fff8ed; border:1px solid #ffe4a8;
+    font-size:.85rem; margin-bottom:16px;
+  }
+  .location-alert a { color:var(--green-500); font-weight:600; }
+
+  @media (max-width:900px) {
+    .surplus-exchange-layout { grid-template-columns:1fr; }
+    .map-panel { position:relative; top:0; height:320px; }
+    .surplus-list-panel { max-height:none; }
+  }
+</style>
+
+<!-- Page header -->
+<div class="page-header-row" style="margin-bottom:20px;">
+    <div class="page-header" style="margin-bottom:0;">
+        <h2>🗺️ Surplus Exchange</h2>
+        <p>Temukan makanan surplus dari pengguna terdekat</p>
+    </div>
+    <a href="{% url 'surplus_create' %}" class="btn-green">+ Buat Listing</a>
+</div>
+
+<!-- Alert lokasi -->
+{% if not has_location %}
+<div class="location-alert">
+    <span style="font-size:1.2rem;">📍</span>
+    <span>Aktifkan lokasi di <a href="{% url 'profile_edit' %}">Profil</a> untuk melihat listing terdekat dan jarak ke setiap listing.</span>
+</div>
+{% endif %}
+
+<!-- Filter bar -->
+<div class="filter-row">
+    <a href="{% url 'surplus_list' %}"
+       class="filter-pill {% if not type_filter %}active{% endif %}">🗂 Semua</a>
+    <a href="?type=jual"
+       class="filter-pill {% if type_filter == 'jual' %}active{% endif %}">🏷 Dijual</a>
+    <a href="?type=donasi"
+       class="filter-pill {% if type_filter == 'donasi' %}active{% endif %}">🎁 Donasi</a>
+    <span class="filter-pill filter-pill-right">
+        📍 Radius: {% if has_location %}3 km{% else %}Semua{% endif %}
+    </span>
+</div>
+
+<!-- 2-col layout — selalu tampil -->
+<div class="surplus-exchange-layout">
+
+    <!-- Kiri: List -->
+    <div class="surplus-list-panel">
+        {% if listings_with_distance %}
+            {% for item in listings_with_distance %}
+            {% with listing=item.listing %}
+            <a href="{% url 'surplus_detail' listing.pk %}"
+               class="surplus-item"
+               data-lat="{{ listing.latitude|default:'' }}"
+               data-lon="{{ listing.longitude|default:'' }}"
+               data-id="{{ listing.pk }}">
+                <div class="surplus-item-header">
+                    <h4>
+                        {% if listing.type == 'jual' %}🛒{% else %}🎁{% endif %}
+                        {{ listing.title }}
+                    </h4>
+                    <span class="type-badge type-{{ listing.type }}">
+                        {{ listing.get_type_display }}
+                    </span>
+                </div>
+                <div class="surplus-item-meta">
+                    {% if item.distance %}
+                        <span>📍 {{ item.distance }} km</span>
+                    {% endif %}
+                    <span>👤 {{ listing.user.username }}</span>
+                    {% if listing.type == 'jual' %}
+                        <span>💰 Rp {{ listing.price|floatformat:0 }}</span>
+                    {% else %}
+                        <span>🆓 Gratis</span>
+                    {% endif %}
+                    {% if listing.user.avg_rating %}
+                        <span>⭐ {{ listing.user.avg_rating|floatformat:1 }}</span>
+                    {% endif %}
+                </div>
+                {% if listing.description %}
+                <div class="surplus-item-footer">
+                    {{ listing.description|truncatechars:80 }}
+                </div>
+                {% endif %}
+                <div class="surplus-item-footer" style="margin-top:6px;">
+                    ⏰ {{ listing.created_at|date:"d M Y" }}
+                    {% if listing.expiry_listing %}· Berlaku hingga {{ listing.expiry_listing|date:"d M, H:i" }}{% endif %}
+                </div>
+            </a>
+            {% endwith %}
+            {% endfor %}
+        {% else %}
+            <!-- Empty state di panel kiri, peta tetap jalan di kanan -->
+            <div style="text-align:center; padding:40px 20px; color:var(--text-light);">
+                <div style="font-size:2.5rem; margin-bottom:12px;">🗺️</div>
+                <div style="font-size:.95rem; font-weight:600; color:var(--text-dark); margin-bottom:8px;">
+                    Belum ada listing surplus
+                </div>
+                <p style="font-size:.85rem; margin-bottom:20px;">
+                    {% if type_filter %}
+                        Tidak ada listing "{{ type_filter }}" saat ini.
+                    {% else %}
+                        Jadilah yang pertama berbagi!
+                    {% endif %}
+                </p>
+                <a href="{% url 'surplus_create' %}" class="btn-green" style="font-size:.85rem; padding:10px 20px;">
+                    + Buat Listing
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Kanan: Peta — selalu tampil -->
+    <div class="map-panel">
+        <div id="map"></div>
+    </div>
+
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    var mapListings = {{ map_listings_json|safe }};
+    var userLat = {{ user_lat|default:"null" }};
+    var userLon = {{ user_lon|default:"null" }};
+
+    var defaultLat = userLat || 5.5483;
+    var defaultLon = userLon || 95.3238;
+
+    var map = L.map('map').setView([defaultLat, defaultLon], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // Marker lokasi user
+    if (userLat && userLon) {
+        var userIcon = L.divIcon({
+            className: '',
+            html: '<div style="background:var(--green-500);width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 0 8px rgba(0,0,0,0.3)"></div>',
+            iconSize: [16, 16], iconAnchor: [8, 8],
+        });
+        L.marker([userLat, userLon], {icon: userIcon})
+            .addTo(map)
+            .bindPopup('<strong>📍 Lokasi Kamu</strong>');
+
+        // Lingkaran radius 3km
+        L.circle([userLat, userLon], {
+            radius: 3000,
+            color: 'var(--green-500)',
+            fillColor: 'var(--green-400)',
+            fillOpacity: 0.06,
+            weight: 1.5,
+            dashArray: '6 4',
+        }).addTo(map);
+    }
+
+    // Markers listing surplus
+    var markers = {};
+    mapListings.forEach(function(item) {
+        var isJual = item.type === 'jual';
+        var bg = isJual ? '#1d4ed8' : '#166534';
+        var emoji = isJual ? '🛒' : '🎁';
+        var short = item.title.length > 18 ? item.title.substring(0, 18) + '…' : item.title;
+
+        var iconHtml = '<div style="background:' + bg + ';color:#fff;padding:5px 10px;border-radius:12px;font-size:11px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.25);font-weight:600;">' + emoji + ' ' + short + '</div>';
+
+        var icon = L.divIcon({ className:'', html:iconHtml, iconAnchor:[0,0] });
+
+        var price = isJual ? 'Rp ' + parseInt(item.price).toLocaleString('id-ID') : 'Gratis';
+        var dist = item.distance ? '<br>📍 ' + item.distance + ' km' : '';
+        var popup = '<strong>' + item.title + '</strong><br>' + price + dist + '<br><a href="' + item.url + '" style="color:var(--green-500);font-weight:600;">Lihat Detail →</a>';
+
+        var marker = L.marker([item.lat, item.lon], {icon:icon})
+            .addTo(map)
+            .bindPopup(popup);
+
+        markers[item.id] = marker;
+    });
+
+    // Klik surplus item → buka popup di peta
+    document.querySelectorAll('.surplus-item').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+            var id = parseInt(this.dataset.id);
+            var lat = parseFloat(this.dataset.lat);
+            var lon = parseFloat(this.dataset.lon);
+
+            // Highlight selected
+            document.querySelectorAll('.surplus-item').forEach(function(s) {
+                s.classList.remove('selected');
+            });
+            this.classList.add('selected');
+
+            // Pan peta + buka popup — hanya kalau ada koordinat
+            if (!isNaN(lat) && !isNaN(lon)) {
+                e.preventDefault(); // tahan navigasi, buka popup dulu
+                map.flyTo([lat, lon], 15, {duration: 0.8});
+                if (markers[id]) markers[id].openPopup();
+            }
+            // kalau tidak ada koordinat, link berjalan normal (navigasi ke detail)
+        });
+    });
+</script>
+
+{% endblock %}

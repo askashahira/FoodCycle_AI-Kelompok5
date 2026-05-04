@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Edit Profil{% endblock %}
+{% block page_title %}Edit Profil{% endblock %}
+{% block content %}
+
+<div style="max-width:680px; margin:0 auto;">
+    <div style="margin-bottom:24px;">
+        <h2 style="font-size:1.7rem; font-weight:800;">✏️ Edit Profil</h2>
+        <p style="color:var(--text-mid); margin-top:4px; font-size:.9rem;">Perbarui informasi akun kamu</p>
+    </div>
+
+    <div class="form-card">
+        <form method="post" id="profileForm">
+            {% csrf_token %}
+            {{ form.latitude }}
+            {{ form.longitude }}
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Username *</label>
+                    <input type="text" name="username" value="{{ form.username.value|default:'' }}"
+                        placeholder="Username kamu">
+                    {% if form.username.errors %}
+                        <span style="color:var(--red-400); font-size:.78rem;">⚠ {{ form.username.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" name="email" value="{{ form.email.value|default:'' }}"
+                        placeholder="email@contoh.com">
+                    {% if form.email.errors %}
+                        <span style="color:var(--red-400); font-size:.78rem;">⚠ {{ form.email.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group form-span-2">
+                    <label>Alamat</label>
+                    <textarea name="address" rows="2" placeholder="Jl. Contoh No. 1, Kota, Provinsi">{{ form.address.value|default:'' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Lokasi -->
+            <div style="background:var(--cream); border-radius:12px; padding:20px; margin-top:16px; border:1.5px solid var(--border);">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <p style="font-weight:700; font-size:.9rem; margin-bottom:4px;">📍 Lokasi Kamu</p>
+                        <p id="location-status" style="font-size:.82rem; color:var(--text-mid);">
+                            {% if user.latitude %}
+                                ✅ Lokasi tersimpan: {{ user.latitude|floatformat:4 }}, {{ user.longitude|floatformat:4 }}
+                            {% else %}
+                                Belum ada lokasi tersimpan.
+                            {% endif %}
+                        </p>
+                    </div>
+                    <button type="button" onclick="getLocation()" class="btn-green" style="font-size:.82rem; padding:9px 18px;">
+                        🎯 Deteksi Otomatis
+                    </button>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:20px;">
+                <a href="{% url 'profile' %}" class="btn-secondary">Batal</a>
+                <button type="submit" class="btn-green">💾 Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function getLocation() {
+    var status = document.getElementById('location-status');
+    status.textContent = '⏳ Mendeteksi lokasi...';
+    status.style.color = 'var(--text-mid)';
+
+    if (!navigator.geolocation) {
+        status.textContent = '❌ Browser tidak mendukung geolokasi.';
+        status.style.color = 'var(--red-400)';
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        function(pos) {
+            var lat = pos.coords.latitude;
+            var lon = pos.coords.longitude;
+            document.querySelector('input[name="latitude"]').value = lat;
+            document.querySelector('input[name="longitude"]').value = lon;
+            status.textContent = '✅ Lokasi terdeteksi: ' + lat.toFixed(6) + ', ' + lon.toFixed(6);
+            status.style.color = 'var(--green-500)';
+        },
+        function(err) {
+            var msg = '❌ Gagal deteksi lokasi.';
+            if (err.code === 1) msg = '❌ Izin lokasi ditolak. Izinkan akses lokasi di browser.';
+            else if (err.code === 2) msg = '❌ Lokasi tidak tersedia.';
+            status.textContent = msg;
+            status.style.color = 'var(--red-400)';
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
+}
+</script>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}{{ recipe.recipe_name }}{% endblock %}
+{% block page_title %}Detail Resep{% endblock %}
+{% block content %}
+
+<a href="{% url 'recipe' %}" style="display:inline-flex; align-items:center; gap:6px; color:var(--text-mid); text-decoration:none; font-size:.875rem; margin-bottom:20px; font-weight:500;">
+    ← Kembali ke Resep AI
+</a>
+
+<div style="display:grid; grid-template-columns:1fr 320px; gap:24px; align-items:start;">
+    <!-- Kiri: Langkah Masak -->
+    <div>
+        <div class="card" style="margin-bottom:20px;">
+            <div style="height:180px; background:linear-gradient(135deg,#dcfce7,#86efac); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:5rem; margin-bottom:20px;">
+                🍳
+            </div>
+            <h1 style="font-size:1.8rem; font-weight:800; margin-bottom:8px;">{{ recipe.recipe_name }}</h1>
+            <p style="font-size:.82rem; color:var(--text-light);">{{ recipe.generated_at|date:"d M Y, H:i" }}</p>
+        </div>
+
+        <!-- Bahan -->
+        <div class="card" style="margin-bottom:20px;">
+            <h3 style="margin-bottom:16px;">🥘 Bahan yang Digunakan</h3>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                {% for bahan in recipe.ingredients_used.split %}
+                <span style="background:var(--green-100); color:var(--green-700); padding:5px 14px; border-radius:20px; font-size:.82rem; font-weight:600;">
+                    {{ bahan|cut:"," }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Langkah Masak -->
+        <div class="card">
+            <h3 style="margin-bottom:20px;">👨‍🍳 Langkah-Langkah Memasak</h3>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                {% for langkah in recipe.instructions.split|join:" "|split_by_step %}
+                {% empty %}
+                {% endfor %}
+                <!-- Tampilkan instructions dengan format step -->
+                <div style="white-space:pre-line; line-height:1.8; color:var(--text-mid); font-size:.9rem;">
+                {% for step in recipe.instructions.split:"Langkah" %}
+                    {% if step.strip %}
+                    <div style="display:flex; gap:16px; padding:16px; background:var(--cream); border-radius:12px; margin-bottom:12px;">
+                        <div style="width:32px; height:32px; background:var(--green-400); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--green-900); font-size:.85rem; flex-shrink:0; font-family:'Fraunces',serif;">
+                            {{ forloop.counter }}
+                        </div>
+                        <p style="margin:0; padding-top:4px; font-size:.9rem; color:var(--text-dark); line-height:1.6;">
+                            {{ step|cut:":"| slice:"2:" |default:step }}
+                        </p>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kanan: Info + Aksi -->
+    <div>
+        <!-- Nutrisi -->
+        <div class="card" style="margin-bottom:20px;">
+            <h3 style="margin-bottom:16px;">🥗 Estimasi Gizi</h3>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
+                {% for info in recipe.nutrition_estimate.split "," %}
+                <span class="nutr-badge">{{ info.strip }}</span>
+                {% endfor %}
+            </div>
+            <div style="padding:12px 16px; background:var(--cream); border-radius:10px; text-align:center;">
+                <div style="font-family:'Fraunces',serif; font-size:1.6rem; font-weight:800; color:var(--green-500);">
+                    ~Rp {{ recipe.price_estimate|floatformat:0 }}
+                </div>
+                <div style="font-size:.75rem; color:var(--text-light); margin-top:2px;">Estimasi biaya memasak</div>
+            </div>
+        </div>
+
+        <!-- Update Stok -->
+        <div class="card" style="border:2px solid var(--green-400);">
+            <h3 style="margin-bottom:8px;">📦 Update Stok</h3>
+            <p style="font-size:.82rem; color:var(--text-mid); margin-bottom:16px;">
+                Klik tombol di bawah untuk otomatis mengurangi stok bahan yang digunakan dalam resep ini.
+            </p>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn-green" style="width:100%; text-align:center;"
+                    onclick="return confirm('Update stok bahan yang digunakan?')">
+                    ✓ Masak & Update Stok
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

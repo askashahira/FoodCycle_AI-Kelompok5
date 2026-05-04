@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Pesanan Masuk{% endblock %}
+{% block page_title %}Pesanan Masuk{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:28px;">
+    <h2 style="font-size:1.7rem; font-weight:800;">📬 Pesanan Masuk</h2>
+    <p style="color:var(--text-mid); margin-top:4px; font-size:.9rem;">Kelola pesanan dari pembeli untuk listing kamu</p>
+</div>
+
+{% if incoming %}
+<div style="display:flex; flex-direction:column; gap:16px;">
+    {% for t in incoming %}
+    <div style="background:#fff; border-radius:var(--radius); padding:20px; box-shadow:var(--card-shadow);">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+            <div style="flex:1;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <span class="type-badge type-{{ t.listing.type }}">{{ t.listing.get_type_display }}</span>
+                    <span class="badge {% if t.status == 'pending' %}badge-warning{% elif t.status == 'confirmed' %}badge-ok{% elif t.status == 'completed' %}badge-ok{% else %}badge-expired{% endif %}">
+                        {% if t.status == 'pending' %}Menunggu Konfirmasi
+                        {% elif t.status == 'confirmed' %}Diterima
+                        {% elif t.status == 'completed' %}Selesai
+                        {% else %}Ditolak{% endif %}
+                    </span>
+                </div>
+                <h3 style="font-size:1rem; font-weight:700; margin-bottom:6px;">{{ t.listing.title }}</h3>
+                <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                    <p style="font-size:.82rem; color:var(--text-mid);">
+                        👤 Pembeli: <strong>{{ t.buyer.username }}</strong>
+                    </p>
+                    <p style="font-size:.82rem; color:var(--text-mid);">
+                        📅 {{ t.transaction_date|date:"d M Y, H:i" }}
+                    </p>
+                    {% if t.listing.type == 'jual' %}
+                    <p style="font-size:.82rem; color:var(--green-500); font-weight:700;">
+                        💰 Rp {{ t.listing.price|floatformat:0 }}
+                    </p>
+                    {% endif %}
+                </div>
+                {% if t.notes %}
+                <div style="margin-top:10px; padding:10px 14px; background:var(--cream); border-radius:8px; font-size:.82rem; color:var(--text-mid);">
+                    💬 <em>"{{ t.notes }}"</em>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if t.status == 'pending' %}
+            <div style="display:flex; gap:8px; flex-shrink:0;">
+                <form method="post" action="{% url 'order_action' t.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="accept">
+                    <button type="submit" class="btn-green" style="font-size:.82rem; padding:9px 18px;">
+                        ✓ Terima
+                    </button>
+                </form>
+                <form method="post" action="{% url 'order_action' t.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reject">
+                    <button type="submit" class="btn-danger" style="font-size:.82rem; padding:9px 18px;" onclick="return confirm('Tolak pesanan ini?')">
+                        ✗ Tolak
+                    </button>
+                </form>
+            </div>
+            {% elif t.status == 'confirmed' %}
+            <form method="post" action="{% url 'order_action' t.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="complete">
+                <button type="submit" class="btn-green" style="font-size:.82rem; padding:9px 18px; background:var(--green-700);">
+                    ✓ Tandai Selesai
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p style="font-size:3rem; margin-bottom:1rem;">📭</p>
+    <p style="font-size:1.1rem; font-weight:600; margin-bottom:.5rem;">Belum ada pesanan masuk</p>
+    <p style="color:var(--text-light); font-size:.9rem;">Pesanan akan muncul di sini saat ada yang memesan listing kamu</p>
+</div>
+{% endif %}
+{% endblock %}

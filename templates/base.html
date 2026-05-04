@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FoodCycle AI{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,300&display=swap" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<script>
+function toggleDropdown() {
+    document.getElementById('dropdownMenu').classList.toggle('show');
+}
+document.addEventListener('click', function(e) {
+    var dropdown = document.getElementById('profileDropdown');
+    if (dropdown && !dropdown.contains(e.target)) {
+        document.getElementById('dropdownMenu').classList.remove('show');
+    }
+});
+</script>
+<body>
+<div class="app-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="{% url 'home' %}" class="sidebar-brand">🌱 FoodCycle AI</a>
+
+        {% if user.is_authenticated %}
+        <div class="sidebar-user">
+            <div class="sidebar-avatar">{{ user.username|first|upper }}</div>
+            <div>
+                <div class="sidebar-username">{{ user.username }}</div>
+                <div class="sidebar-role">{{ user.display_role }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <nav class="sidebar-nav">
+            <div class="sidebar-section">Menu</div>
+            <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <span class="icon">📊</span> Dashboard
+            </a>
+            <a href="{% url 'food_list' %}" class="{% if 'food' in request.resolver_match.url_name %}active{% endif %}">
+                <span class="icon">🥦</span> Stok Bahan
+            </a>
+            <a href="{% url 'recipe' %}" class="{% if 'recipe' in request.resolver_match.url_name %}active{% endif %}">
+                <span class="icon">🤖</span> Resep AI
+            </a>
+
+            <div class="sidebar-section">Surplus</div>
+            <a href="{% url 'surplus_list' %}" class="{% if request.resolver_match.url_name == 'surplus_list' %}active{% endif %}">
+                <span class="icon">🗺️</span> Surplus Exchange
+            </a>
+            <a href="{% url 'surplus_create' %}" class="{% if request.resolver_match.url_name == 'surplus_create' %}active{% endif %}">
+                <span class="icon">📝</span> Buat Listing
+            </a>
+            <a href="{% url 'my_listings' %}" class="{% if request.resolver_match.url_name == 'my_listings' %}active{% endif %}">
+                <span class="icon">📋</span> Listing Saya
+            </a>
+            <a href="{% url 'my_purchases' %}" class="{% if request.resolver_match.url_name == 'my_purchases' %}active{% endif %}">
+                <span class="icon">🛍️</span> Pembelian Saya
+            </a>
+            <a href="{% url 'my_orders' %}" class="{% if request.resolver_match.url_name == 'my_orders' %}active{% endif %}">
+                <span class="icon">📬</span> Pesanan Masuk
+            </a>
+
+            <div class="sidebar-section">Akun</div>
+            {% if user.is_staff %}
+            <a href="{% url 'admin_dashboard' %}" class="{% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}" style="color:#f5a623 !important;">
+                <span class="icon">⚙️</span> Admin Panel
+            </a>
+            {% endif %}
+            <!-- <a href="{% url 'logout' %}" style="color:rgba(242,96,96,0.8) !important;" onmouseover="this.style.color='var(--red-400) !important'" >
+                <span class="icon">🚪</span> Logout -->
+            </a>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-wrapper">
+        <div class="topbar">
+    <span class="topbar-title">{% block page_title %}FoodCycle AI{% endblock %}</span>
+    <div class="topbar-right">
+        {% if user.is_authenticated %}
+        <div class="profile-dropdown" id="profileDropdown">
+            <button onclick="toggleDropdown()" class="profile-trigger">
+                <div class="profile-trigger-avatar">{{ user.username|first|upper }}</div>
+                <span style="font-size:.875rem; font-weight:600;">{{ user.username }}</span>
+                <span style="font-size:.7rem; color:var(--text-light);">▼</span>
+            </button>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <a href="{% url 'profile' %}" class="dropdown-item">
+                    👤 Profil Saya
+                </a>
+                <a href="{% url 'profile_edit' %}" class="dropdown-item">
+                    ✏️ Edit Profil
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="{% url 'logout' %}" class="dropdown-item" style="color:var(--red-400);">
+                    🚪 Logout
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+        <div class="page-content">
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="alert">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+</body>
+</html>

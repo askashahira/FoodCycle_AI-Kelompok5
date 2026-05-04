@@ -1,0 +1,117 @@
+{% extends 'base_auth.html' %}
+{% block title %}Daftar - FoodCycle AI{% endblock %}
+{% block content %}
+<div style="min-height:calc(100vh - 64px); display:flex; align-items:center; justify-content:center; padding:2rem;">
+    <div style="background:var(--warm-white); border-radius:20px; padding:2.5rem; width:100%; max-width:480px; box-shadow:0 24px 64px rgba(0,0,0,0.25);">
+        <div style="text-align:center; margin-bottom:2rem;">
+            <div style="font-size:2.5rem; margin-bottom:.5rem;">🌱</div>
+            <h2 style="font-family:'Fraunces',serif; color:var(--green-900); font-size:1.7rem; margin-bottom:.3rem;">Buat Akun Baru</h2>
+            <p style="color:var(--text-light); font-size:.9rem;">Bergabung dengan komunitas FoodCycle AI</p>
+        </div>
+
+        <form method="post" id="registerForm">
+            {% csrf_token %}
+
+            <!-- Username -->
+            <div style="margin-bottom:1.2rem;">
+                <label style="font-size:.82rem; font-weight:600; color:var(--text-mid); display:block; margin-bottom:6px;">Username *</label>
+                <input type="text" name="username" value="{{ form.username.value|default:'' }}"
+                    placeholder="Contoh: rahmatun_nisa"
+                    style="width:100%; padding:11px 14px; border:1.5px solid {% if form.username.errors %}var(--red-400){% else %}#e2e8f0{% endif %}; border-radius:10px; font-size:.9rem; font-family:'Plus Jakarta Sans',sans-serif; outline:none; background:var(--cream);"
+                    onfocus="this.style.borderColor='var(--green-400)'; hideHint('hint-username')"
+                    onblur="this.style.borderColor='#e2e8f0'; showHint('hint-username')">
+                {% if form.username.errors %}
+                    <p style="color:var(--red-400); font-size:.78rem; margin-top:4px;">⚠ {{ form.username.errors.0 }}</p>
+                {% endif %}
+                <p id="hint-username" style="display:none; color:var(--text-light); font-size:.75rem; margin-top:4px;">Maksimal 150 karakter. Huruf, angka, dan @/./+/-/_ saja.</p>
+            </div>
+
+            <!-- Email -->
+            <div style="margin-bottom:1.2rem;">
+                <label style="font-size:.82rem; font-weight:600; color:var(--text-mid); display:block; margin-bottom:6px;">Email *</label>
+                <input type="email" name="email" value="{{ form.email.value|default:'' }}"
+                    placeholder="contoh@email.com"
+                    style="width:100%; padding:11px 14px; border:1.5px solid {% if form.email.errors %}var(--red-400){% else %}#e2e8f0{% endif %}; border-radius:10px; font-size:.9rem; font-family:'Plus Jakarta Sans',sans-serif; outline:none; background:var(--cream);"
+                    onfocus="this.style.borderColor='var(--green-400)'"
+                    onblur="this.style.borderColor='#e2e8f0'">
+                {% if form.email.errors %}
+                    <p style="color:var(--red-400); font-size:.78rem; margin-top:4px;">⚠ {{ form.email.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Password -->
+            <div style="margin-bottom:1.2rem;">
+                <label style="font-size:.82rem; font-weight:600; color:var(--text-mid); display:block; margin-bottom:6px;">Password *</label>
+                <div style="position:relative;">
+                    <input type="password" name="password1" id="pw1"
+                        placeholder="Minimal 8 karakter"
+                        style="width:100%; padding:11px 42px 11px 14px; border:1.5px solid {% if form.password1.errors %}var(--red-400){% else %}#e2e8f0{% endif %}; border-radius:10px; font-size:.9rem; font-family:'Plus Jakarta Sans',sans-serif; outline:none; background:var(--cream);"
+                        onfocus="this.style.borderColor='var(--green-400)'; showHint('hint-pw')"
+                        onblur="this.style.borderColor='#e2e8f0'">
+                    <button type="button" onclick="togglePw('pw1','eye1')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1rem; color:var(--text-light);" id="eye1">👁</button>
+                </div>
+                {% if form.password1.errors %}
+                    <p style="color:var(--red-400); font-size:.78rem; margin-top:4px;">⚠ {{ form.password1.errors.0 }}</p>
+                {% endif %}
+                <div id="hint-pw" style="display:none; background:var(--cream); border-radius:8px; padding:10px 12px; margin-top:8px; font-size:.78rem; color:var(--text-mid); line-height:1.8;">
+                    Password tidak boleh mirip informasi pribadi kamu<br>
+                    Minimal 8 karakter<br>
+                    Tidak boleh password yang terlalu umum<br>
+                    Tidak boleh sepenuhnya angka
+                </div>
+            </div>
+
+            <!-- Konfirmasi Password -->
+            <div style="margin-bottom:1.2rem;">
+                <label style="font-size:.82rem; font-weight:600; color:var(--text-mid); display:block; margin-bottom:6px;">Konfirmasi Password *</label>
+                <div style="position:relative;">
+                    <input type="password" name="password2" id="pw2"
+                        placeholder="Ulangi password kamu"
+                        style="width:100%; padding:11px 42px 11px 14px; border:1.5px solid {% if form.password2.errors %}var(--red-400){% else %}#e2e8f0{% endif %}; border-radius:10px; font-size:.9rem; font-family:'Plus Jakarta Sans',sans-serif; outline:none; background:var(--cream);"
+                        onfocus="this.style.borderColor='var(--green-400)'"
+                        onblur="this.style.borderColor='#e2e8f0'">
+                    <button type="button" onclick="togglePw('pw2','eye2')" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1rem; color:var(--text-light);" id="eye2">👁</button>
+                </div>
+                {% if form.password2.errors %}
+                    <p style="color:var(--red-400); font-size:.78rem; margin-top:4px;">⚠ {{ form.password2.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Alamat -->
+            <div style="margin-bottom:1.5rem;">
+                <label style="font-size:.82rem; font-weight:600; color:var(--text-mid); display:block; margin-bottom:6px;">Alamat <span style="color:var(--text-light); font-weight:400;">(opsional)</span></label>
+                <textarea name="address" rows="2"
+                    placeholder="Contoh: Jl. Syiah Kuala No. 12, Darussalam, Banda Aceh"
+                    style="width:100%; padding:11px 14px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:.9rem; font-family:'Plus Jakarta Sans',sans-serif; outline:none; background:var(--cream); resize:none;"
+                    onfocus="this.style.borderColor='var(--green-400)'"
+                    onblur="this.style.borderColor='#e2e8f0'">{{ form.address.value|default:'' }}</textarea>
+            </div>
+
+            <button type="submit" style="width:100%; padding:.9rem; background:var(--green-400); color:var(--green-900); border:none; border-radius:10px; font-size:1rem; font-weight:700; font-family:'Fraunces',serif; cursor:pointer; box-shadow:0 8px 24px rgba(62,201,138,.3);">
+                Daftar Sekarang →
+            </button>
+        </form>
+
+        <p style="text-align:center; margin-top:1.5rem; font-size:.875rem; color:var(--text-light);">
+            Sudah punya akun? <a href="{% url 'login' %}" style="color:var(--green-500); font-weight:600; text-decoration:none;">Login di sini</a>
+        </p>
+    </div>
+</div>
+
+<script>
+function togglePw(fieldId, btnId) {
+    var f = document.getElementById(fieldId);
+    var b = document.getElementById(btnId);
+    f.type = f.type === 'password' ? 'text' : 'password';
+    b.textContent = f.type === 'password' ? '👁' : '🙈';
+}
+function showHint(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'block';
+}
+function hideHint(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+}
+</script>
+{% endblock %}

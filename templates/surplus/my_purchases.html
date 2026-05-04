@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Pembelian Saya{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>🛍️ Pembelian Saya</h1>
+    {% if purchases %}
+    <table class="table">
+        <thead>
+            <tr><th>Item</th><th>Penjual</th><th>Status</th><th>Tanggal</th><th>Review</th></tr>
+        </thead>
+        <tbody>
+            {% for t in purchases %}
+            <tr>
+                <td>{{ t.listing.title }}</td>
+                <td>{{ t.listing.user.username }}</td>
+                <td>{{ t.get_status_display }}</td>
+                <td>{{ t.transaction_date|date:"d M Y" }}</td>
+                <td>
+                    {% if t.status == 'completed' and not t.review %}
+                        <a href="{% url 'give_review' t.pk %}" class="btn-sm-primary">Beri Review</a>
+                    {% elif t.review %}
+                        <span class="badge badge-ok">⭐ {{ t.review.rating }}</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><p>Belum ada pembelian.</p></div>
+    {% endif %}
+</div>
+{% endblock %}
