@@ -12,17 +12,3 @@ services:
       python manage.py createadmin &&
       python manage.py seeddata &&
       gunicorn foodcycle.wsgi
-
-    envVars:
-      - key: SECRET_KEY
-        generateValue: true
-      - key: DEBUG
-        value: "False"
-      - key: GROQ_API_KEY
-        sync: false
-      - key: DJANGO_SUPERUSER_USERNAME
-        value: admin
-      - key: DJANGO_SUPERUSER_EMAIL
-        value: admin@gmail.com
-      - key: DJANGO_SUPERUSER_PASSWORD
-        value: admin123
