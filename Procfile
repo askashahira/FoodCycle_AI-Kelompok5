@@ -1,0 +1,1 @@
+web: gunicorn foodcycle.wsgi --log-file -
