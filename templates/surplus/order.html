@@ -1,18 +1,160 @@
 {% extends 'base.html' %}
 {% block title %}Pesan - {{ listing.title }}{% endblock %}
+{% block page_title %}Pesan Item{% endblock %}
 {% block content %}
-<div class="auth-container">
-    <h2>{% if listing.type == 'jual' %}Pesan{% else %}Ambil Donasi{% endif %}</h2>
-    <p><strong>{{ listing.title }}</strong></p>
-    {% if listing.type == 'jual' %}
-        <p class="price">Rp {{ listing.price|floatformat:0 }}</p>
-    {% endif %}
-    <form method="post">
-        {% csrf_token %}
-        <p><label>Catatan (opsional):</label>
-        <textarea name="notes" rows="3" style="width:100%; margin-top:0.5rem;"></textarea></p>
-        <button type="submit" class="btn-primary">Konfirmasi</button>
-        <a href="{% url 'surplus_detail' listing.pk %}" class="btn-secondary">Batal</a>
-    </form>
+
+<div style="max-width:520px; margin:0 auto;">
+    <div class="form-card">
+        <!-- Header -->
+        <div style="display:flex; gap:16px; align-items:center; margin-bottom:24px; padding-bottom:20px; border-bottom:1px solid var(--border);">
+            <div style="width:64px; height:64px; border-radius:12px; overflow:hidden; flex-shrink:0;">
+                {% if listing.photo %}
+                    <img src="{{ listing.photo.url }}" style="width:100%; height:100%; object-fit:cover;">
+                {% else %}
+                    <div style="width:100%; height:100%; background:var(--green-100); display:flex; align-items:center; justify-content:center; font-size:1.8rem;">🍱</div>
+                {% endif %}
+            </div>
+            <div>
+                <div style="display:flex; gap:8px; margin-bottom:6px;">
+                    <span class="type-badge type-{{ listing.type }}">{{ listing.get_type_display }}</span>
+                </div>
+                <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:4px;">{{ listing.title }}</h3>
+                <div style="font-size:.82rem; color:var(--text-mid);">
+                    👤 {{ listing.user.username }}
+                    {% if listing.user.avg_rating %} · ⭐ {{ listing.user.avg_rating|floatformat:1 }}{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Stok tersedia -->
+        <div style="background:var(--green-100); border-radius:var(--radius-sm); padding:12px 16px; margin-bottom:20px; font-size:.88rem; color:var(--green-700);">
+            📦 Stok tersedia: <strong>{{ listing.quantity }} {{ listing.unit }}</strong>
+        </div>
+
+        <form method="post" id="order-form">
+            {% csrf_token %}
+
+            <!-- Input jumlah -->
+            <div class="form-group" style="margin-bottom:20px;">
+                <label style="margin-bottom:8px; display:block;">
+                    Jumlah yang ingin dipesan *
+                </label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button type="button" onclick="changeQty(-1)"
+                        style="width:36px; height:36px; border-radius:8px; border:1.5px solid var(--border); background:#fff; font-size:1.2rem; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center;">−</button>
+                    <input type="number" name="quantity" id="qty-input"
+                        value="1" min="0.5" max="{{ listing.quantity }}" step="0.5"
+                        style="text-align:center; font-size:1.1rem; font-weight:700; width:80px;"
+                        oninput="updateTotal()">
+                    <button type="button" onclick="changeQty(1)"
+                        style="width:36px; height:36px; border-radius:8px; border:1.5px solid var(--border); background:#fff; font-size:1.2rem; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center;">+</button>
+                    <span style="font-size:.9rem; color:var(--text-mid);">{{ listing.unit }}</span>
+                </div>
+                <div id="qty-error" style="color:var(--red-400); font-size:.78rem; margin-top:6px; display:none;">
+                    ⚠ Jumlah melebihi stok tersedia
+                </div>
+            </div>
+
+            <!-- Total harga -->
+            {% if listing.type == 'jual' %}
+            <div style="background:var(--cream); border-radius:var(--radius-sm); padding:16px; margin-bottom:20px;">
+                <div style="display:flex; justify-content:space-between; font-size:.85rem; color:var(--text-mid); margin-bottom:8px;">
+                    <span>Harga per {{ listing.unit }}</span>
+                    <span>Rp {{ listing.price|floatformat:0 }}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:.85rem; color:var(--text-mid); margin-bottom:12px;">
+                    <span>Jumlah</span>
+                    <span id="summary-qty">1 {{ listing.unit }}</span>
+                </div>
+                <div style="border-top:1px solid var(--border); padding-top:12px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:700;">Total</span>
+                    <span class="price" id="total-price">Rp {{ listing.price|floatformat:0 }}</span>
+                </div>
+            </div>
+            {% else %}
+            <div style="background:var(--green-100); border-radius:var(--radius-sm); padding:14px 16px; margin-bottom:20px; text-align:center;">
+                <span style="font-size:1.1rem; font-weight:700; color:var(--green-700);">🎁 Gratis</span>
+            </div>
+            {% endif %}
+
+            <!-- Catatan -->
+            <div class="form-group" style="margin-bottom:24px;">
+                <label>Catatan untuk penjual (opsional)</label>
+                <textarea name="notes" rows="3" placeholder="Misal: lokasi pengambilan, waktu yang diinginkan..."></textarea>
+            </div>
+
+            <!-- Tombol -->
+            <div style="display:flex; gap:12px;">
+                <button type="submit" class="btn-green" style="flex:1; text-align:center;" id="submit-btn">
+                    ✓ Konfirmasi Pesanan
+                </button>
+                <a href="{% url 'surplus_detail' listing.pk %}" class="btn-secondary">Batal</a>
+            </div>
+        </form>
+    </div>
 </div>
+
+<script>
+    var pricePerUnit = parseFloat("{{ listing.price|default_if_none:0|floatformat:0 }}") || 0;
+    var maxQty = parseFloat("{{ listing.quantity|floatformat:2 }}".replace(',', '.')) || 0;
+    var unit = '{{ listing.unit }}';
+
+    function changeQty(delta) {
+    var input = document.getElementById('qty-input');
+    var val = parseFloat(input.value) || 1;
+
+    val = Math.max(0.5, Math.min(maxQty, val + delta * 0.5));
+    val = Math.round(val * 2) / 2;
+
+    input.value = val;
+
+    // 🔥 pastikan update dipanggil
+    updateTotal();
+}
+
+    function updateTotal() {
+    var input = document.getElementById('qty-input');
+    var qty = parseFloat(input.value) || 1;
+    var errEl = document.getElementById('qty-error');
+    var submitBtn = document.getElementById('submit-btn');
+
+    // Validasi
+    if (qty > maxQty) {
+        errEl.style.display = 'block';
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '.5';
+    } else {
+        errEl.style.display = 'none';
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+    }
+
+    // Update summary
+    var summaryQty = document.getElementById('summary-qty');
+    if (summaryQty) summaryQty.textContent = qty + ' ' + unit;
+
+    // Update total
+    var totalEl = document.getElementById('total-price');
+    if (totalEl && pricePerUnit > 0) {
+        var total = qty * pricePerUnit;
+        totalEl.textContent = 'Rp ' + total.toLocaleString('id-ID');
+    }
+}
+
+// ✅ TAMBAHKAN INI
+window.onload = function () {
+    var input = document.getElementById('qty-input');
+
+    // Trigger saat user ketik manual
+    input.addEventListener('input', updateTotal);
+
+    // Trigger saat klik (kadang number input butuh ini)
+    input.addEventListener('change', updateTotal);
+
+    // Initial load
+    updateTotal();
+};
+
+</script>
+
 {% endblock %}

@@ -189,9 +189,9 @@
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    var mapListings = {{ map_listings_json|safe }};
-    var userLat = {{ user_lat|default:"null" }};
-    var userLon = {{ user_lon|default:"null" }};
+    var mapListings = JSON.parse('{{ map_listings_json|escapejs }}');
+    var userLat = parseFloat("{{ user_lat|default_if_none:'' }}".replace(',', '.'));
+    var userLon = parseFloat("{{ user_lon|default_if_none:'' }}".replace(',', '.'));
 
     var defaultLat = userLat || 5.5483;
     var defaultLon = userLon || 95.3238;

@@ -14,4 +14,5 @@ urlpatterns = [
     path('admin-dashboard/semua-pengguna/', views.admin_all_users_view, name='admin_all_users'),
     path('pengguna/<str:username>/', views.public_profile_view, name='public_profile'),
     path('admin-dashboard/transaksi/', views.admin_all_transactions_view, name='admin_all_transactions'),
+    
 ]

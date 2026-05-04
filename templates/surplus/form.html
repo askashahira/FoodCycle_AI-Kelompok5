@@ -155,6 +155,19 @@
                         {% if form.price.errors %}<span style="color:var(--red-400);font-size:.78rem;">⚠ {{ form.price.errors.0 }}</span>{% endif %}
                     </div>
 
+                    <!-- Jumlah & Satuan -->
+                    <div class="form-group">
+                        <label>{{ form.quantity.label }} *</label>
+                        {{ form.quantity }}
+                        {% if form.quantity.errors %}<span style="color:var(--red-400);font-size:.78rem;">⚠ {{ form.quantity.errors.0 }}</span>{% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label>{{ form.unit.label }} *</label>
+                        {{ form.unit }}
+                        {% if form.unit.errors %}<span style="color:var(--red-400);font-size:.78rem;">⚠ {{ form.unit.errors.0 }}</span>{% endif %}
+                    </div>
+
                     <!-- Batas waktu -->
                     <div class="form-group form-span-2">
                         <label>{{ form.expired_at.label }} *</label>
@@ -301,13 +314,25 @@ if (descInput) {
 // ── Preview: harga ─────────────────────────────────────
 function updatePrice() {
     var priceInput = document.querySelector('input[name="price"]');
+    var qtyInput = document.querySelector('input[name="quantity"]');
+    var unitInput = document.querySelector('select[name="unit"]');
     var el = document.getElementById('preview-price');
-    if (!priceInput || currentType === 'donasi') { el.textContent = 'Gratis'; return; }
+    var unit = unitInput ? unitInput.value : 'porsi';
+    var qty = qtyInput ? (parseFloat(qtyInput.value) || 1) : 1;
+    if (!priceInput || currentType === 'donasi') {
+        el.textContent = 'Gratis · ' + qty + ' ' + unit;
+        return;
+    }
     var val = parseFloat(priceInput.value);
-    el.textContent = isNaN(val) ? '—' : 'Rp ' + val.toLocaleString('id-ID') + ' / porsi';
+    el.textContent = isNaN(val) ? '— · ' + qty + ' ' + unit
+        : 'Rp ' + val.toLocaleString('id-ID') + ' / ' + unit + ' · ' + qty + ' ' + unit;
 }
 var priceInput = document.querySelector('input[name="price"]');
 if (priceInput) priceInput.addEventListener('input', updatePrice);
+var qtyInput = document.querySelector('input[name="quantity"]');
+if (qtyInput) qtyInput.addEventListener('input', updatePrice);
+var unitInput = document.querySelector('select[name="unit"]');
+if (unitInput) unitInput.addEventListener('change', updatePrice);
 
 // ── Preview: expired_at ────────────────────────────────
 var expiredInput = document.querySelector('input[name="expired_at"]');

@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import SurplusListing, Transaction, Review
 from .forms import SurplusListingForm, ReviewForm
+from decimal import Decimal
 
 # Create your views here.
 def surplus_list_view(request):
@@ -11,7 +12,6 @@ def surplus_list_view(request):
     if type_filter:
         listings = listings.filter(type=type_filter)
 
-    # Filter radius kalau user login dan punya koordinat
     user_lat = None
     user_lon = None
     listings_with_distance = []
@@ -21,21 +21,19 @@ def surplus_list_view(request):
         user_lon = float(request.user.longitude)
         for listing in listings:
             if listing.latitude and listing.longitude:
-                distance = haversine(user_lat, user_lon, listing.latitude, listing.longitude)
-                if distance <= float(listing.radius_km):
-                    listings_with_distance.append({
-                        'listing': listing,
-                        'distance': round(distance, 2)
-                    })
+                distance = haversine(user_lat, user_lon, float(listing.latitude), float(listing.longitude))
             else:
-                listings_with_distance.append({
-                    'listing': listing,
-                    'distance': None
-                })
+                distance = None
+            listings_with_distance.append({
+                'listing': listing,
+                'distance': round(distance, 2) if distance is not None else None
+            })
+        # Urutkan: yang punya jarak duluan (terdekat), lalu yang tidak punya koordinat
+        listings_with_distance.sort(key=lambda x: x['distance'] if x['distance'] is not None else 9999)
     else:
         listings_with_distance = [{'listing': l, 'distance': None} for l in listings]
 
-    # Data untuk peta (semua listing yang punya koordinat)
+    # Data untuk peta
     map_listings = []
     for item in listings_with_distance:
         l = item['listing']
@@ -111,18 +109,69 @@ def order_view(request, pk):
     if listing.user == request.user:
         messages.error(request, 'Kamu tidak bisa memesan listing milikmu sendiri!')
         return redirect('surplus_detail', pk=pk)
+
     if request.method == 'POST':
         notes = request.POST.get('notes', '')
+        try:
+            qty = Decimal(request.POST.get('quantity', 1))
+            if qty <= 0:
+                raise ValueError
+        except (ValueError, TypeError):
+            qty = 1
+
+        # Validasi stok cukup
+        if qty > listing.quantity:
+            messages.error(request, f'Stok tidak cukup. Tersisa {listing.quantity} {listing.unit}.')
+            return redirect('surplus_detail', pk=pk)
+
         Transaction.objects.create(
             listing=listing,
             buyer=request.user,
             notes=notes,
+            quantity=qty,
         )
-        listing.status = 'terjual'
+
+        # Kurangi stok listing
+        listing.quantity -= qty
+        if listing.quantity <= 0:
+            listing.quantity = 0
+            listing.status = 'terjual'
         listing.save()
-        messages.success(request, 'Pesanan berhasil dibuat!')
+
+        messages.success(request, 'Pesanan berhasil dibuat! Tunggu konfirmasi penjual.')
         return redirect('my_purchases')
+
     return render(request, 'surplus/order.html', {'listing': listing})
+
+
+@login_required
+def order_action_view(request, pk):
+    """Penjual accept/reject/complete pesanan"""
+    transaction = get_object_or_404(Transaction, pk=pk, listing__user=request.user)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'accept':
+            transaction.status = 'confirmed'
+            transaction.save()
+            messages.success(request, 'Pesanan berhasil diterima!')
+
+        elif action == 'reject':
+            transaction.status = 'cancelled'
+            transaction.save()
+            # Kembalikan stok ke listing
+            listing = transaction.listing
+            listing.quantity += transaction.quantity
+            if listing.status == 'terjual' and listing.quantity > 0:
+                listing.status = 'aktif'
+            listing.save()
+            messages.success(request, 'Pesanan ditolak, stok dikembalikan.')
+
+        elif action == 'complete':
+            transaction.status = 'completed'
+            transaction.save()
+            messages.success(request, 'Transaksi selesai!')
+
+    return redirect('my_orders')
 
 @login_required
 def my_purchases_view(request):
@@ -170,25 +219,3 @@ def my_orders_view(request):
     ).order_by('-transaction_date')
     return render(request, 'surplus/my_orders.html', {'incoming': incoming})
 
-@login_required
-def order_action_view(request, pk):
-    """Penjual accept/reject pesanan"""
-    transaction = get_object_or_404(Transaction, pk=pk, listing__user=request.user)
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        if action == 'accept':
-            transaction.status = 'confirmed'
-            transaction.save()
-            messages.success(request, 'Pesanan berhasil diterima!')
-        elif action == 'reject':
-            transaction.status = 'cancelled'
-            transaction.save()
-            # Aktifkan kembali listing
-            transaction.listing.status = 'aktif'
-            transaction.listing.save()
-            messages.success(request, 'Pesanan ditolak.')
-        elif action == 'complete':
-            transaction.status = 'completed'
-            transaction.save()
-            messages.success(request, 'Transaksi selesai!')
-    return redirect('my_orders')

@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 
-# Create your models here.
 class SurplusListing(models.Model):
     TYPE_CHOICES = [('jual', 'Jual'), ('donasi', 'Donasi')]
     STATUS_CHOICES = [
@@ -9,6 +8,14 @@ class SurplusListing(models.Model):
         ('terjual', 'Terjual'),
         ('kedaluarsa', 'Kedaluarsa'),
         ('dibatalkan', 'Dibatalkan'),
+    ]
+    UNIT_CHOICES = [
+        ('porsi', 'Porsi'),
+        ('kg', 'Kg'),
+        ('gram', 'Gram'),
+        ('liter', 'Liter'),
+        ('pcs', 'Pcs'),
+        ('bungkus', 'Bungkus'),
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='listings')
@@ -23,9 +30,15 @@ class SurplusListing(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     latitude = models.DecimalField(max_digits=10, decimal_places=8, null=True, blank=True)
     longitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+    unit = models.CharField(max_length=20, choices=UNIT_CHOICES, default='porsi')
 
     def __str__(self):
         return f"{self.title} ({self.user.username})"
+
+    @property
+    def is_available(self):
+        return self.quantity > 0 and self.status == 'aktif'
 
 
 class Transaction(models.Model):
@@ -41,6 +54,7 @@ class Transaction(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     transaction_date = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1)
 
     def __str__(self):
         return f"Transaksi {self.listing.title} - {self.buyer.username}"

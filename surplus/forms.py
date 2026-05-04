@@ -9,15 +9,19 @@ class SurplusListingForm(forms.ModelForm):
 
     class Meta:
         model = SurplusListing
-        fields = ['title', 'description', 'type', 'price', 'photo', 'radius_km', 'expired_at']
+        fields = ['title', 'description', 'type', 'price', 'photo',
+                  'quantity', 'unit', 'radius_km', 'expired_at']
         labels = {
             'title': 'Judul Listing',
             'description': 'Deskripsi Makanan',
             'type': 'Tipe',
-            'price': 'Harga (kosongkan jika donasi)',
+            'price': 'Harga per unit (kosongkan jika donasi)',
             'photo': 'Foto Makanan',
+            'quantity': 'Jumlah Tersedia',
+            'unit': 'Satuan',
             'radius_km': 'Radius Distribusi (km)',
         }
+
 
 class ReviewForm(forms.ModelForm):
     class Meta:

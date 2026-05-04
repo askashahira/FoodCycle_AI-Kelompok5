@@ -8,8 +8,10 @@
 </a>
 
 <div style="display:grid; grid-template-columns:1fr 320px; gap:24px; align-items:start;">
-    <!-- Kiri: Langkah Masak -->
+
+    <!-- ── Kiri ── -->
     <div>
+        <!-- Header resep -->
         <div class="card" style="margin-bottom:20px;">
             <div style="height:180px; background:linear-gradient(135deg,#dcfce7,#86efac); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:5rem; margin-bottom:20px;">
                 🍳
@@ -18,7 +20,7 @@
             <p style="font-size:.82rem; color:var(--text-light);">{{ recipe.generated_at|date:"d M Y, H:i" }}</p>
         </div>
 
-        <!-- Bahan -->
+        <!-- Bahan yang digunakan -->
         <div class="card" style="margin-bottom:20px;">
             <h3 style="margin-bottom:16px;">🥘 Bahan yang Digunakan</h3>
             <div style="display:flex; flex-wrap:wrap; gap:8px;">
@@ -30,40 +32,29 @@
             </div>
         </div>
 
-        <!-- Langkah Masak -->
+        <!-- Langkah masak -->
         <div class="card">
             <h3 style="margin-bottom:20px;">👨‍🍳 Langkah-Langkah Memasak</h3>
-            <div style="display:flex; flex-direction:column; gap:16px;">
-                {% for langkah in recipe.instructions.split|join:" "|split_by_step %}
-                {% empty %}
-                {% endfor %}
-                <!-- Tampilkan instructions dengan format step -->
+            <div id="steps-container"></div>
+            <!-- Fallback kalau JS mati -->
+            <noscript>
                 <div style="white-space:pre-line; line-height:1.8; color:var(--text-mid); font-size:.9rem;">
-                {% for step in recipe.instructions.split:"Langkah" %}
-                    {% if step.strip %}
-                    <div style="display:flex; gap:16px; padding:16px; background:var(--cream); border-radius:12px; margin-bottom:12px;">
-                        <div style="width:32px; height:32px; background:var(--green-400); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--green-900); font-size:.85rem; flex-shrink:0; font-family:'Fraunces',serif;">
-                            {{ forloop.counter }}
-                        </div>
-                        <p style="margin:0; padding-top:4px; font-size:.9rem; color:var(--text-dark); line-height:1.6;">
-                            {{ step|cut:":"| slice:"2:" |default:step }}
-                        </p>
-                    </div>
-                    {% endif %}
-                {% endfor %}
+                    {{ recipe.instructions }}
                 </div>
-            </div>
+            </noscript>
+            <!-- Data mentah disimpan di hidden element, diparse JS -->
+            <div id="raw-instructions" style="display:none;">{{ recipe.instructions }}</div>
         </div>
     </div>
 
-    <!-- Kanan: Info + Aksi -->
+    <!-- ── Kanan ── -->
     <div>
-        <!-- Nutrisi -->
+        <!-- Nutrisi & Harga -->
         <div class="card" style="margin-bottom:20px;">
             <h3 style="margin-bottom:16px;">🥗 Estimasi Gizi</h3>
             <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
-                {% for info in recipe.nutrition_estimate.split "," %}
-                <span class="nutr-badge">{{ info.strip }}</span>
+                {% for info in recipe.nutrition_estimate.split %}
+                <span class="nutr-badge">{{ info|cut:"," }}</span>
                 {% endfor %}
             </div>
             <div style="padding:12px 16px; background:var(--cream); border-radius:10px; text-align:center;">
@@ -90,4 +81,55 @@
         </div>
     </div>
 </div>
+
+<script>
+// Parse instructions dan render sebagai step cards
+(function() {
+    var raw = document.getElementById('raw-instructions').textContent.trim();
+    var container = document.getElementById('steps-container');
+
+    if (!raw) {
+        container.innerHTML = '<p style="color:var(--text-light); font-size:.9rem;">Tidak ada instruksi.</p>';
+        return;
+    }
+
+    // Coba split by "Langkah N" atau baris baru berganda atau nomor "1." "2." dll
+    var steps = [];
+
+    // Pattern 1: "Langkah 1", "Langkah 2", dst
+    if (raw.match(/langkah\s+\d+/i)) {
+        steps = raw.split(/langkah\s+\d+[:\.\s]*/i).filter(function(s) { return s.trim(); });
+    }
+    // Pattern 2: "1.", "2.", dst di awal baris
+    else if (raw.match(/^\s*\d+\./m)) {
+        steps = raw.split(/\n?\s*\d+\.\s+/).filter(function(s) { return s.trim(); });
+    }
+    // Pattern 3: split per baris kosong (paragraf)
+    else if (raw.includes('\n\n')) {
+        steps = raw.split(/\n\n+/).filter(function(s) { return s.trim(); });
+    }
+    // Fallback: split per baris
+    else {
+        steps = raw.split('\n').filter(function(s) { return s.trim(); });
+    }
+
+    if (steps.length === 0) {
+        // Fallback: tampilkan as-is
+        container.innerHTML = '<div style="white-space:pre-line; line-height:1.8; color:var(--text-mid); font-size:.9rem;">' + raw + '</div>';
+        return;
+    }
+
+    var html = '<div style="display:flex; flex-direction:column; gap:12px;">';
+    steps.forEach(function(step, i) {
+        html += '<div style="display:flex; gap:16px; padding:16px; background:var(--cream); border-radius:12px;">';
+        html += '<div style="width:32px; height:32px; background:var(--green-400); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--green-900); font-size:.85rem; flex-shrink:0; font-family:\'Fraunces\',serif;">' + (i + 1) + '</div>';
+        html += '<p style="margin:0; padding-top:4px; font-size:.9rem; color:var(--text-dark); line-height:1.6; white-space:pre-line;">' + step.trim() + '</p>';
+        html += '</div>';
+    });
+    html += '</div>';
+
+    container.innerHTML = html;
+})();
+</script>
+
 {% endblock %}
