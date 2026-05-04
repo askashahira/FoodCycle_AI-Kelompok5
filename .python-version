@@ -1,0 +1,1 @@
+echo "3.11.0" | Out-File -FilePath .python-version -Encoding utf8 -NoNewline
