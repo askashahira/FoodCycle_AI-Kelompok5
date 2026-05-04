@@ -1,23 +1,31 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from datetime import timedelta
 from surplus.models import SurplusListing
 import random
 
+
 class Command(BaseCommand):
-    help = 'Seed dummy data'
+    help = 'Seed dummy data untuk demo'
 
     def handle(self, *args, **kwargs):
         User = get_user_model()
 
-        # buat user dummy
-        user, _ = User.objects.get_or_create(
+        # ✅ Buat / ambil user demo
+        user, created = User.objects.get_or_create(
             username='user_demo',
             defaults={'email': 'demo@gmail.com'}
         )
-        user.set_password('123456')
-        user.save()
 
-        # lokasi Banda Aceh
+        if created:
+            user.set_password('123456')
+            user.save()
+            self.stdout.write(self.style.SUCCESS('User demo dibuat'))
+        else:
+            self.stdout.write('User demo sudah ada')
+
+        # 📍 Lokasi sekitar Banda Aceh
         locations = [
             (5.5483, 95.3238),
             (5.5520, 95.3200),
@@ -35,33 +43,45 @@ class Command(BaseCommand):
         ]
 
         descriptions = [
-            "Masih hangat dan layak konsumsi",
-            "Segera diambil sebelum basi",
-            "Baru dimasak pagi ini",
-            "Sisa event, masih banyak",
-            "Fresh hari ini",
+            "Masih hangat, ambil cepat ya!",
+            "Sisa jual hari ini, masih fresh",
+            "Gratis untuk yang membutuhkan 🙏",
+            "Baru dimasak, tidak habis terjual",
+            "Masih layak konsumsi, sayang dibuang",
         ]
 
-        for i in range(5):
+        created_count = 0
+
+        for i in range(len(locations)):
             lat, lon = locations[i]
 
-            # random type
+            # ⛔ Hindari duplikat
+            if SurplusListing.objects.filter(title=titles[i]).exists():
+                continue
+
             listing_type = random.choice(['jual', 'donasi'])
 
-            # harga hanya kalau jual
-            price = random.randint(3000, 25000) if listing_type == 'jual' else 0
+            SurplusListing.objects.create(
+                user=user,
+                title=titles[i],
+                description=random.choice(descriptions),
 
-            if not SurplusListing.objects.filter(title=titles[i]).exists():
-                SurplusListing.objects.create(
-                    user=user,
-                    title=titles[i],
-                    description=random.choice(descriptions),
-                    type=listing_type,
-                    price=price,
-                    quantity=random.choice([1, 2, 3, 5, 10]),
-                    unit='porsi',
-                    latitude=lat,
-                    longitude=lon,
-                )
+                # 🔥 Random type
+                type=listing_type,
 
-        self.stdout.write(self.style.SUCCESS('Dummy data created!'))
+                # 🔥 Harga hanya kalau jual
+                price=random.randint(3000, 25000) if listing_type == 'jual' else 0,
+
+                quantity=random.choice([1, 2, 3, 5, 10]),
+                unit='porsi',
+
+                latitude=lat,
+                longitude=lon,
+
+                # 🔥 WAJIB (fix error kamu)
+                expired_at=timezone.now() + timedelta(hours=random.randint(6, 48)),
+            )
+
+            created_count += 1
+
+        self.stdout.write(self.style.SUCCESS(f'{created_count} data berhasil ditambahkan!'))
