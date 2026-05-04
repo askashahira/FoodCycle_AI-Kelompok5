@@ -21,10 +21,10 @@ FoodCycle AI adalah platform web yang mengintegrasikan kecerdasan buatan (AI) de
 
 | Nama | NIM | Role |
 |------|-----|------|
-| Rahmatun Nisa | 2308107010016 | Project Lead & Frontend |
-| Haikal Aulia | 2308107010063 | Backend & Database |
-| Dwi Hamdan Sukran | 2308107010065 | AI Integration |
-| Aska Shahira | 2308107010075 | UI/UX & Testing |
+| Rahmatun Nisa | 2308107010016 | AI & Logic |
+| Haikal Aulia | 2308107010063 | QA & Deploy|
+| Dwi Hamdan Sukran | 2308107010065 | Frontend |
+| Aska Shahira | 2308107010075 | Backend & Database + Integration |
 
 ---
 
