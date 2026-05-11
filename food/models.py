@@ -40,6 +40,9 @@ class AIRecommendation(models.Model):
     instructions = models.TextField()
     nutrition_estimate = models.TextField()
     price_estimate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    servings = models.IntegerField(default=2)
+    servings_description = models.CharField(max_length=200, blank=True)
+    leftover_potential = models.CharField(max_length=300, blank=True)
     generated_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

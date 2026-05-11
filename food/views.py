@@ -193,9 +193,12 @@ def recipe_view(request):
                         instructions=recipe.get('instructions', ''),
                         nutrition_estimate=recipe.get('nutrition_estimate', ''),
                         price_estimate=recipe.get('price_estimate', 0),
+                        servings=recipe.get('servings', 2),
+                        servings_description=recipe.get('servings_description', ''),
+                        leftover_potential=recipe.get('leftover_potential', ''),
                     )
                     saved_recipes.append(saved)
-                recipes = saved_recipes  # ← ini yang berubah, sekarang list of objects bukan dict
+                recipes = saved_recipes
             else:
                 error = 'Gagal generate resep. Coba lagi!'
 
@@ -216,20 +219,36 @@ def recipe_detail_view(request, pk):
     from .models import AIRecommendation
     recipe = get_object_or_404(AIRecommendation, pk=pk, user=request.user)
     
-    if request.method == 'POST':
-        # Update stok bahan yang dipakai
-        ingredient_names = [i.strip().lower() for i in recipe.ingredients_used.split(',')]
-        updated = []
-        for name in ingredient_names:
-            items = FoodItem.objects.filter(
-                user=request.user,
-                name__icontains=name
-            )
-            for item in items:
-                item.quantity = max(0, item.quantity - 1)
-                item.save()
-                updated.append(item.name)
-        messages.success(request, f'Stok diperbarui: {", ".join(updated) if updated else "tidak ada bahan cocok"}')
-        return redirect('food_list')
+    # Parse langkah masak di views, bukan di template
+    steps = []
+    if recipe.instructions:
+        parts = recipe.instructions.split('Langkah')
+        for part in parts:
+            part = part.strip()
+            if part:
+                # Hapus angka di depan seperti "1:" atau "1 :"
+                import re
+                clean = re.sub(r'^\d+\s*[:.]?\s*', '', part).strip()
+                if clean:
+                    steps.append(clean)
     
-    return render(request, 'food/recipe_detail.html', {'recipe': recipe})
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'update_stock':
+            import re
+            ingredient_names = [i.strip().lower() for i in recipe.ingredients_used.split(',')]
+            updated = []
+            for name in ingredient_names:
+                clean_name = re.sub(r'\(.*?\)', '', name).strip()
+                items = FoodItem.objects.filter(user=request.user, name__icontains=clean_name)
+                for item in items:
+                    item.quantity = max(0, float(item.quantity) - 1)
+                    item.save()
+                    updated.append(item.name)
+            messages.success(request, f'✅ Stok berhasil diperbarui! Sekarang kamu bisa jual sisa masakan.')
+            return redirect('recipe_detail', pk=pk)  # ← tetap di halaman ini
+    
+    return render(request, 'food/recipe_detail.html', {
+        'recipe': recipe,
+        'steps': steps,
+    })

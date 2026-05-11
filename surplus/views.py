@@ -219,3 +219,34 @@ def my_orders_view(request):
     ).order_by('-transaction_date')
     return render(request, 'surplus/my_orders.html', {'incoming': incoming})
 
+@login_required
+def surplus_create_from_recipe_view(request, recipe_pk):
+    from food.models import AIRecommendation
+    recipe = get_object_or_404(AIRecommendation, pk=recipe_pk, user=request.user)
+    
+    # Pre-fill data dari resep
+    initial_data = {
+        'title': f'{recipe.recipe_name} (Sisa Masakan)',
+        'description': f'Sisa masakan {recipe.recipe_name}. Dibuat dari bahan: {recipe.ingredients_used}. {recipe.servings_description}',
+        'type': 'jual',
+        'price': recipe.price_estimate,
+        'radius_km': 3,
+    }
+    
+    form = SurplusListingForm(request.POST or None, request.FILES or None, initial=initial_data)
+    
+    if request.method == 'POST' and form.is_valid():
+        listing = form.save(commit=False)
+        listing.user = request.user
+        if request.user.latitude and request.user.longitude:
+            listing.latitude = request.user.latitude
+            listing.longitude = request.user.longitude
+        listing.save()
+        messages.success(request, 'Listing sisa masakan berhasil dibuat!')
+        return redirect('surplus_detail', pk=listing.pk)
+    
+    return render(request, 'surplus/form_from_recipe.html', {
+        'form': form,
+        'recipe': recipe,
+        'title': 'Jual/Donasi Sisa Masakan',
+    })

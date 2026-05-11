@@ -18,6 +18,30 @@
             </div>
             <h1 style="font-size:1.8rem; font-weight:800; margin-bottom:8px;">{{ recipe.recipe_name }}</h1>
             <p style="font-size:.82rem; color:var(--text-light);">{{ recipe.generated_at|date:"d M Y, H:i" }}</p>
+
+            <!-- Info Porsi -->
+            {% if recipe.servings %}
+            <div style="display:flex; gap:12px; margin-top:16px; flex-wrap:wrap;">
+                <div style="background:var(--green-100); border-radius:10px; padding:12px 16px; text-align:center; flex:1; min-width:80px;">
+                    <div style="font-family:'Fraunces',serif; font-size:1.8rem; font-weight:800; color:var(--green-700);">{{ recipe.servings }}</div>
+                    <div style="font-size:.72rem; color:var(--green-700); font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Porsi</div>
+                </div>
+                <div style="background:#fef3c7; border-radius:10px; padding:12px 16px; text-align:center; flex:1; min-width:80px;">
+                    <div style="font-family:'Fraunces',serif; font-size:1.4rem; font-weight:800; color:#92600a;">~Rp {{ recipe.price_estimate|floatformat:0 }}</div>
+                    <div style="font-size:.72rem; color:#92600a; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Est. Biaya</div>
+                </div>
+            </div>
+            {% if recipe.servings_description %}
+            <div style="margin-top:10px; padding:10px 14px; background:var(--cream); border-radius:8px; font-size:.84rem; color:var(--text-mid);">
+                🍽 {{ recipe.servings_description }}
+            </div>
+            {% endif %}
+            {% if recipe.leftover_potential %}
+            <div style="margin-top:8px; padding:10px 14px; background:#fff8ed; border:1px solid #ffe4a8; border-radius:8px; font-size:.84rem; color:#92600a;">
+                💡 {{ recipe.leftover_potential }}
+            </div>
+            {% endif %}
+            {% endif %}
         </div>
 
         <!-- Bahan yang digunakan -->
@@ -36,13 +60,11 @@
         <div class="card">
             <h3 style="margin-bottom:20px;">👨‍🍳 Langkah-Langkah Memasak</h3>
             <div id="steps-container"></div>
-            <!-- Fallback kalau JS mati -->
             <noscript>
                 <div style="white-space:pre-line; line-height:1.8; color:var(--text-mid); font-size:.9rem;">
                     {{ recipe.instructions }}
                 </div>
             </noscript>
-            <!-- Data mentah disimpan di hidden element, diparse JS -->
             <div id="raw-instructions" style="display:none;">{{ recipe.instructions }}</div>
         </div>
     </div>
@@ -50,7 +72,7 @@
     <!-- ── Kanan ── -->
     <div>
         <!-- Nutrisi & Harga -->
-        <div class="card" style="margin-bottom:20px;">
+        <div class="card" style="margin-bottom:16px;">
             <h3 style="margin-bottom:16px;">🥗 Estimasi Gizi</h3>
             <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
                 {% for info in recipe.nutrition_estimate.split %}
@@ -66,24 +88,46 @@
         </div>
 
         <!-- Update Stok -->
-        <div class="card" style="border:2px solid var(--green-400);">
-            <h3 style="margin-bottom:8px;">📦 Update Stok</h3>
+        <div class="card" style="margin-bottom:16px; border:2px solid var(--green-400);">
+            <h3 style="margin-bottom:8px;">📦 Sudah Dimasak?</h3>
             <p style="font-size:.82rem; color:var(--text-mid); margin-bottom:16px;">
-                Klik tombol di bawah untuk otomatis mengurangi stok bahan yang digunakan dalam resep ini.
+                Klik tombol ini untuk mengurangi stok bahan yang sudah digunakan.
             </p>
             <form method="post">
                 {% csrf_token %}
+                <input type="hidden" name="action" value="update_stock">
                 <button type="submit" class="btn-green" style="width:100%; text-align:center;"
                     onclick="return confirm('Update stok bahan yang digunakan?')">
                     ✓ Masak & Update Stok
                 </button>
             </form>
         </div>
+
+        <!-- Jual Sisa Masakan -->
+        <div class="card" style="border:2px solid #dbeafe;">
+            <h3 style="margin-bottom:8px; color:#1d4ed8;">🛒 Ada Sisa Masakan?</h3>
+            <p style="font-size:.82rem; color:var(--text-mid); margin-bottom:12px;">
+                Jual atau donasikan sisa masakan ke tetangga sekitar lewat Surplus Exchange!
+            </p>
+            <div style="background:#f0f9ff; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:.78rem; color:#0369a1;">
+                <div style="font-weight:700; margin-bottom:4px;">📋 Data yang diisi otomatis:</div>
+                <div>• Judul: {{ recipe.recipe_name }}</div>
+                <div>• Porsi tersedia: {{ recipe.servings|default:"2" }} porsi</div>
+                <div>• Bahan: {{ recipe.ingredients_used|truncatechars:50 }}</div>
+            </div>
+           <a href="{% url 'surplus_create_from_recipe' recipe.pk %}"
+            style="display:block; text-align:center; background:#1d4ed8; color:white; padding:11px; border-radius:10px; text-decoration:none; font-weight:700; font-size:.875rem; font-family:'Fraunces',serif;"
+            onclick="return confirm('Pastikan kamu sudah memasak dan ada sisa. Lanjut buat listing?')">
+                🚀 Jual/Donasi Sisa Masakan →
+            </a>
+            <p style="font-size:.72rem; color:#94a3b8; text-align:center; margin-top:8px;">
+                * Pastikan sudah klik "Masak & Update Stok" sebelum menjual sisa
+            </p>
+        </div>
     </div>
 </div>
 
 <script>
-// Parse instructions dan render sebagai step cards
 (function() {
     var raw = document.getElementById('raw-instructions').textContent.trim();
     var container = document.getElementById('steps-container');
@@ -93,28 +137,19 @@
         return;
     }
 
-    // Coba split by "Langkah N" atau baris baru berganda atau nomor "1." "2." dll
     var steps = [];
 
-    // Pattern 1: "Langkah 1", "Langkah 2", dst
     if (raw.match(/langkah\s+\d+/i)) {
         steps = raw.split(/langkah\s+\d+[:\.\s]*/i).filter(function(s) { return s.trim(); });
-    }
-    // Pattern 2: "1.", "2.", dst di awal baris
-    else if (raw.match(/^\s*\d+\./m)) {
+    } else if (raw.match(/^\s*\d+\./m)) {
         steps = raw.split(/\n?\s*\d+\.\s+/).filter(function(s) { return s.trim(); });
-    }
-    // Pattern 3: split per baris kosong (paragraf)
-    else if (raw.includes('\n\n')) {
+    } else if (raw.includes('\n\n')) {
         steps = raw.split(/\n\n+/).filter(function(s) { return s.trim(); });
-    }
-    // Fallback: split per baris
-    else {
+    } else {
         steps = raw.split('\n').filter(function(s) { return s.trim(); });
     }
 
     if (steps.length === 0) {
-        // Fallback: tampilkan as-is
         container.innerHTML = '<div style="white-space:pre-line; line-height:1.8; color:var(--text-mid); font-size:.9rem;">' + raw + '</div>';
         return;
     }

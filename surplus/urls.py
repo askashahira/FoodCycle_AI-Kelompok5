@@ -13,4 +13,5 @@ urlpatterns = [
     path('review/<int:pk>/', views.give_review_view, name='give_review'),
     path('pesanan-masuk/', views.my_orders_view, name='my_orders'),
     path('pesanan-masuk/<int:pk>/aksi/', views.order_action_view, name='order_action'),
+    path('dari-resep/<int:recipe_pk>/', views.surplus_create_from_recipe_view, name='surplus_create_from_recipe'),
 ]

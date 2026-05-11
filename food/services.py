@@ -9,19 +9,22 @@ def get_recipe_recommendations(ingredients: list) -> list:
         f"{i['name']} ({i['quantity']} {i['unit']})" for i in ingredients
     ])
 
-    prompt = f"""Kamu adalah asisten memasak. Berdasarkan bahan-bahan berikut:
+    prompt = f"""Kamu adalah asisten memasak Indonesia. Berdasarkan bahan-bahan berikut:
 {ingredients_text}
 
-Berikan TEPAT 3 rekomendasi resep masakan Indonesia yang bisa dibuat.
-Prioritaskan menggunakan semua atau sebagian besar bahan yang ada.
+Berikan LEBIH DARI 3 rekomendasi resep masakan Indonesia.
+Prioritaskan bahan yang hampir kedaluwarsa.
 
 Balas HANYA dengan JSON array berikut (tanpa teks lain, tanpa markdown):
 [
   {{
     "recipe_name": "Nama Resep",
-    "ingredients_used": "Bahan1, Bahan2, Bahan3",
+    "ingredients_used": "Bahan1 (100g), Bahan2 (200g), Bahan3 (50g)",
     "instructions": "Langkah 1: ... Langkah 2: ... Langkah 3: ...",
     "nutrition_estimate": "Kalori: ~300 kkal, Protein: ~15g, Karbohidrat: ~30g, Lemak: ~10g",
+    "servings": 3,
+    "servings_description": "Cukup untuk 3 porsi (masing-masing ~200g)",
+    "leftover_potential": "Biasanya ada sisa 1-2 porsi jika dimasak untuk 2 orang",
     "price_estimate": 15000
   }}
 ]"""

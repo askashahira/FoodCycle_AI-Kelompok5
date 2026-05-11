@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}Jual Sisa Masakan{% endblock %}
+{% block content %}
+
+<div style="display:grid; grid-template-columns:1fr 300px; gap:24px; align-items:start; max-width:900px;">
+    <!-- Form -->
+    <div>
+        <div style="margin-bottom:20px;">
+            <h2 style="font-size:1.7rem; font-weight:800;">🍱 {{ title }}</h2>
+            <p style="color:var(--text-mid); margin-top:4px; font-size:.9rem;">
+                Data sudah diisi otomatis dari resep <strong>{{ recipe.recipe_name }}</strong>
+            </p>
+        </div>
+
+        <div class="form-card">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-grid">
+                    {% for field in form %}
+                    <div class="form-group {% if field.name == 'title' or field.name == 'description' %}form-span-2{% endif %}">
+                        <label>{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <span style="color:var(--red-400); font-size:.78rem;">⚠ {{ field.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="form-span-2" style="display:flex; gap:12px; justify-content:flex-end; margin-top:8px;">
+                        <a href="{% url 'recipe_detail' recipe.pk %}" class="btn-secondary">← Kembali</a>
+                        <button type="submit" class="btn-green">🚀 Publikasikan Listing</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Preview resep -->
+    <div>
+        <div class="card" style="border:2px solid var(--green-100);">
+            <h3 style="margin-bottom:12px; font-size:.9rem; color:var(--text-light); text-transform:uppercase; letter-spacing:.06em;">Dari Resep</h3>
+            <div style="height:100px; background:linear-gradient(135deg,#dcfce7,#86efac); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:3rem; margin-bottom:12px;">
+                🍳
+            </div>
+            <h4 style="font-size:1rem; font-weight:700; margin-bottom:8px;">{{ recipe.recipe_name }}</h4>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                <span class="nutr-badge">🍽 {{ recipe.servings }} porsi</span>
+            </div>
+            <p style="font-size:.78rem; color:var(--text-light);">{{ recipe.nutrition_estimate }}</p>
+            <div style="margin-top:12px; padding:10px; background:var(--cream); border-radius:8px; font-size:.78rem; color:var(--text-mid);">
+                <strong>Bahan:</strong> {{ recipe.ingredients_used }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var typeField = document.querySelector('select[name="type"]');
+    var priceField = document.querySelector('input[name="price"]');
+    
+    function togglePrice() {
+        if (!typeField || !priceField) return;
+        if (typeField.value === 'donasi') {
+            priceField.value = '';
+            priceField.disabled = true;
+            priceField.placeholder = 'Gratis (donasi)';
+            priceField.style.background = '#f1f5f9';
+        } else {
+            priceField.disabled = false;
+            priceField.style.background = 'var(--warm-white)';
+        }
+    }
+    
+    if (typeField) {
+        typeField.addEventListener('change', togglePrice);
+        togglePrice();
+    }
+});
+</script>
+{% endblock %}
